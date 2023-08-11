@@ -1,0 +1,26 @@
+import boost
+    ;
+
+boost.use-project
+    ;
+
+constant sources
+    : [ glob *.cpp ]
+    ;
+
+exe exe
+    : $(sources)
+      /lib//lib_lib
+      /boost//program_options
+    ;
+
+import testing
+    ;
+
+unit-test run
+    : exe
+    : <testing.arg>"--help"
+    ;
+
+always run
+    ;
