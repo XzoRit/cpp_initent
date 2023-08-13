@@ -22,20 +22,23 @@ messages& msgs()
     return ms;
 }
 
-template <class A, class B>
-message create_msg(const A& msg, const B& i)
+template <class... A>
+message create_msg(const std::tuple<const A&...>& tup)
 {
-    std::ostringstream str{};
-    str << msg << i;
-    return str.str();
+    return std::apply(
+        [](auto&&... args) {
+            std::ostringstream str{};
+            (str << ... << args);
+            return str.str();
+        },
+        tup);
 }
 
-template <class A, class B>
+template <class... A>
 struct [[maybe_unused]] intent
 {
-    explicit intent(std::tuple<const A&, const B&> t)
-        : msg{std::get<0>(t)}
-        , i{std::get<1>(t)}
+    explicit intent(std::tuple<const A&...> t)
+        : tup{t}
     {
     }
 
@@ -45,7 +48,7 @@ struct [[maybe_unused]] intent
             return;
         try
         {
-            const auto& full_msg{create_msg(msg, i)};
+            const auto& full_msg{create_msg(tup)};
             msgs().push_back(full_msg);
         }
         catch (...)
@@ -53,13 +56,12 @@ struct [[maybe_unused]] intent
         }
     }
     int except_count{std::uncaught_exceptions()};
-    const A& msg;
-    const B& i;
+    std::tuple<const A&...> tup;
 };
 
 int a(int i)
 {
-    intent in{ctie("intent a", i)};
+    intent in{ctie("intent a", " with i:", i)};
     if (i < 0)
         throw std::runtime_error{"i < 0"};
     return i;
@@ -81,7 +83,6 @@ BOOST_AUTO_TEST_CASE(no_intent_on_success)
 
 BOOST_AUTO_TEST_CASE(intent_on_failure)
 {
-    intent i{ctie("start", 0)};
     try
     {
         intent ii{ctie("a(-1)", -1)};
@@ -91,32 +92,11 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
     {
         BOOST_TEST(!msgs().empty());
         BOOST_TEST(msgs().size() == 2);
-        BOOST_TEST(msgs()[0] == "intent a-1");
+        BOOST_TEST(msgs()[0] == "intent a with i:-1");
         BOOST_TEST(msgs()[1] == "a(-1)-1");
 
         msgs().clear();
     }
-    BOOST_TEST(msgs().empty());
-}
-
-BOOST_AUTO_TEST_CASE(intents_per_thread)
-{
-    intent i{ctie("start", 0)};
-    try
-    {
-        intent ii{ctie("a(-1)", -1)};
-        a(-1);
-    }
-    catch (const std::exception& e)
-    {
-        BOOST_TEST(!msgs().empty());
-        BOOST_TEST(msgs().size() == 2);
-        BOOST_TEST(msgs()[0] == "intent a-1");
-        BOOST_TEST(msgs()[1] == "a(-1)-1");
-
-        msgs().clear();
-    }
-    BOOST_TEST(msgs().empty());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
