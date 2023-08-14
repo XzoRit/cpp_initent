@@ -5,6 +5,7 @@
 
 namespace
 {
+using namespace std::string_literals;
 
 struct cm_spy
 {
@@ -44,14 +45,6 @@ std::ostream& operator<<(std::ostream& s, const cm_spy&)
     return s;
 }
 
-template <class... A>
-constexpr std::tuple<const A&...> ctie(const A&... args)
-{
-    return {args...};
-}
-
-using namespace std::string_literals;
-
 using message = std::string;
 using messages = std::vector<message>;
 
@@ -62,7 +55,7 @@ messages& msgs()
 }
 
 template <class... A>
-message msg_from_ostringstream(A&&... args)
+message msg_from_ostringstream(const A&... args)
 {
     std::ostringstream str{};
     (str << ... << args);
@@ -83,10 +76,11 @@ struct [[maybe_unused]] intent
             return;
         try
         {
-            const auto& full_msg{std::apply(
-                [](auto&&... args) { return msg_from_ostringstream(args...); },
-                tup)};
-            msgs().push_back(full_msg);
+            msgs().push_back(std::apply(
+                [](const auto&... args) {
+                    return msg_from_ostringstream(args...);
+                },
+                tup));
         }
         catch (...)
         {
@@ -97,9 +91,9 @@ struct [[maybe_unused]] intent
 };
 
 template <class... A>
-auto make_intent(A&&... args)
+auto make_intent(const A&... args)
 {
-    return intent{ctie(args...)};
+    return intent{std::tie(args...)};
 }
 
 int a(int i)
