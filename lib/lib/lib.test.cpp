@@ -37,8 +37,8 @@ message create_msg(const std::tuple<const A&...>& tup)
 template <class... A>
 struct [[maybe_unused]] intent
 {
-    explicit intent(std::tuple<const A&...> t)
-        : tup{t}
+    explicit intent(const A&... args)
+        : tup{ctie(args...)}
     {
     }
 
@@ -59,9 +59,15 @@ struct [[maybe_unused]] intent
     std::tuple<const A&...> tup;
 };
 
+template <class... A>
+auto make_intent(A... args)
+{
+    return intent{std::forward<A>(args)...};
+}
+
 int a(int i)
 {
-    intent in{ctie("intent a", " with i:", i)};
+    intent in{"intent a", " with i:", i};
     if (i < 0)
         throw std::runtime_error{"i < 0"};
     return i;
@@ -76,7 +82,7 @@ BOOST_AUTO_TEST_CASE(intent_is_empty)
 
 BOOST_AUTO_TEST_CASE(no_intent_on_success)
 {
-    intent i{ctie("start", 0)};
+    intent i{"start", 0};
     a(0);
     BOOST_TEST(msgs().empty());
 }
@@ -85,7 +91,7 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
 {
     try
     {
-        intent ii{ctie("a(-1)", -1)};
+        intent ii{"a(-1)", -1};
         a(-1);
     }
     catch (const std::exception& e)
