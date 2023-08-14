@@ -69,11 +69,11 @@ message msg_from_ostringstream(A&&... args)
     return str.str();
 }
 
-template <class... A>
+template <class Tup>
 struct [[maybe_unused]] intent
 {
-    explicit intent(const A&... args)
-        : tup{ctie(args...)}
+    explicit intent(Tup args)
+        : tup{args}
     {
     }
 
@@ -93,13 +93,13 @@ struct [[maybe_unused]] intent
         }
     }
     int except_count{std::uncaught_exceptions()};
-    std::tuple<const A&...> tup;
+    Tup tup;
 };
 
 template <class... A>
 auto make_intent(A&&... args)
 {
-    return intent{args...};
+    return intent{ctie(args...)};
 }
 
 int a(int i)
