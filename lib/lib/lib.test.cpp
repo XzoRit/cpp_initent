@@ -60,14 +60,14 @@ struct [[maybe_unused]] intent
 };
 
 template <class... A>
-auto make_intent(A... args)
+auto make_intent(A&&... args)
 {
     return intent{std::forward<A>(args)...};
 }
 
 int a(int i)
 {
-    intent in{"intent a", " with i:", i};
+    const auto& in{intent{"intent a", " with i:", i}};
     if (i < 0)
         throw std::runtime_error{"i < 0"};
     return i;
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(intent_is_empty)
 
 BOOST_AUTO_TEST_CASE(no_intent_on_success)
 {
-    intent i{"start", 0};
+    const auto& i{intent{"start", 0}};
     a(0);
     BOOST_TEST(msgs().empty());
 }
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
 {
     try
     {
-        intent ii{"a(-1)", -1};
+        const auto& i{intent{"a(-1)", -1}};
         a(-1);
     }
     catch (const std::exception& e)
