@@ -5,6 +5,45 @@
 
 namespace
 {
+
+struct cm_spy
+{
+    explicit cm_spy(std::string* s)
+        : calls{s}
+    {
+    }
+
+    cm_spy(const cm_spy&)
+    {
+        *calls += "cc";
+    }
+
+    cm_spy(cm_spy&&)
+    {
+        *calls += "mc";
+    }
+
+    cm_spy& operator=(const cm_spy&)
+    {
+        *calls += "ca";
+        return *this;
+    }
+
+    cm_spy& operator=(cm_spy&&)
+    {
+        *calls += "ma";
+        return *this;
+    }
+
+    std::string* calls;
+};
+
+std::ostream& operator<<(std::ostream& s, const cm_spy&)
+{
+    s << "cm_spy";
+    return s;
+}
+
 template <class... A>
 constexpr std::tuple<const A&...> ctie(const A&... args)
 {
@@ -101,6 +140,24 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
 
         msgs().clear();
     }
+}
+
+BOOST_AUTO_TEST_CASE(intent_only_views_data)
+{
+    auto calls{""s};
+    auto spy{cm_spy{&calls}};
+
+    try
+    {
+        const auto i{make_intent(spy)};
+        throw 42;
+    }
+    catch (...)
+    {
+    }
+
+    BOOST_TEST(calls == "");
+    BOOST_TEST(!msgs().empty());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
