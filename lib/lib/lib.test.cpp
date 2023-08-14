@@ -23,15 +23,11 @@ messages& msgs()
 }
 
 template <class... A>
-message create_msg(const std::tuple<const A&...>& tup)
+message msg_from_ostringstream(A&&... args)
 {
-    return std::apply(
-        [](auto&&... args) {
-            std::ostringstream str{};
-            (str << ... << args);
-            return str.str();
-        },
-        tup);
+    std::ostringstream str{};
+    (str << ... << args);
+    return str.str();
 }
 
 template <class... A>
@@ -48,7 +44,9 @@ struct [[maybe_unused]] intent
             return;
         try
         {
-            const auto& full_msg{create_msg(tup)};
+            const auto& full_msg{std::apply(
+                [](auto&&... args) { return msg_from_ostringstream(args...); },
+                tup)};
             msgs().push_back(full_msg);
         }
         catch (...)
@@ -62,7 +60,7 @@ struct [[maybe_unused]] intent
 template <class... A>
 auto make_intent(A&&... args)
 {
-    return intent{std::forward<A>(args)...};
+    return intent{args...};
 }
 
 int a(int i)
