@@ -55,7 +55,7 @@ messages& msgs()
 }
 
 template <class... A>
-message msg_from_ostringstream(const A&... args)
+[[nodiscard]] message msg_from_ostringstream(const A&... args)
 {
     std::ostringstream str{};
     (str << ... << args);
@@ -86,19 +86,25 @@ struct [[maybe_unused]] intent
         {
         }
     }
+
     int except_count{std::uncaught_exceptions()};
     Tup tup;
 };
 
 template <class... A>
-auto make_intent(const A&... args)
+[[nodiscard]] auto make_intent(const A&... args)
 {
-    return intent{std::tie(args...)};
+    return intent{std::make_tuple(args...)};
+}
+
+[[nodiscard]] std::string rvalue_intent_msg_for_a(int i)
+{
+    return "intent a with i:"s + std::to_string(i);
 }
 
 int a(int i)
 {
-    const auto& in{make_intent("intent a", " with i:", i)};
+    const auto& in{make_intent(rvalue_intent_msg_for_a(i))};
     if (i < 0)
         throw std::runtime_error{"i < 0"};
     return i;
