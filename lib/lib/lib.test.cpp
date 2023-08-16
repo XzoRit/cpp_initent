@@ -5,6 +5,8 @@
 
 namespace
 {
+namespace test = boost::unit_test;
+
 using namespace std::string_literals;
 
 struct cm_spy
@@ -92,19 +94,14 @@ struct [[maybe_unused]] intent
 };
 
 template <class... A>
-[[nodiscard]] auto make_intent(const A&... args)
+[[nodiscard]] auto make_intent(A&&... args)
 {
-    return intent{std::make_tuple(args...)};
-}
-
-[[nodiscard]] std::string rvalue_intent_msg_for_a(int i)
-{
-    return "intent a with i:"s + std::to_string(i);
+    return intent{std::tie(args...)};
 }
 
 int a(int i)
 {
-    const auto& in{make_intent(rvalue_intent_msg_for_a(i))};
+    const auto& in{make_intent("intent a with i:", i)};
     if (i < 0)
         throw std::runtime_error{"i < 0"};
     return i;
@@ -157,6 +154,23 @@ BOOST_AUTO_TEST_CASE(intent_only_views_data)
     }
 
     BOOST_TEST(calls == "");
+    BOOST_TEST(!msgs().empty());
+}
+
+BOOST_AUTO_TEST_CASE(intent_copies_data_if_rvalue, *test::disabled())
+{
+    auto calls{""s};
+
+    try
+    {
+        const auto i{make_intent(cm_spy{&calls})};
+        throw 42;
+    }
+    catch (...)
+    {
+    }
+
+    BOOST_TEST(calls == "cc");
     BOOST_TEST(!msgs().empty());
 }
 
