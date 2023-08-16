@@ -1,5 +1,7 @@
 #include <boost/test/unit_test.hpp>
 
+#include <future>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -107,7 +109,32 @@ int a(int i)
     return i;
 }
 
-BOOST_AUTO_TEST_SUITE(intent_tests)
+int a_range(int min, int max)
+{
+    const auto& i{make_intent("a(", min, ", ", max, ")")};
+    auto accu{int{}};
+    for (; min < max; ++min)
+    {
+        const auto& ii{make_intent("accu:", accu, " min:", min)};
+        accu += a(min);
+    }
+    return accu;
+}
+
+struct test_intent
+{
+    test_intent()
+    {
+        msgs().clear();
+    }
+
+    ~test_intent()
+    {
+        msgs().clear();
+    }
+};
+
+BOOST_FIXTURE_TEST_SUITE(intent_tests, test_intent)
 
 BOOST_AUTO_TEST_CASE(intent_is_empty)
 {
@@ -172,6 +199,28 @@ BOOST_AUTO_TEST_CASE(intent_copies_data_if_rvalue, *test::disabled())
 
     BOOST_TEST(calls == "cc");
     BOOST_TEST(!msgs().empty());
+}
+
+BOOST_AUTO_TEST_CASE(intent_from_multiple_threads)
+{
+    auto results{std::vector<std::future<int>>{}};
+
+    for (auto i{int{-50}}; i < 50; i += 10)
+    {
+        results.push_back(std::async(a_range, i, i + 10));
+    }
+
+    for (auto& f : results)
+        f.wait();
+
+    BOOST_TEST(!msgs().empty());
+    BOOST_TEST(std::accumulate(msgs().cbegin(),
+                               msgs().cend(),
+                               ""s,
+                               [](auto accu, const auto& s) {
+                                   accu += s + '\n';
+                                   return accu;
+                               }) == "");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
