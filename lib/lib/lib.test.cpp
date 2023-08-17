@@ -18,24 +18,28 @@ struct cm_spy
     {
     }
 
-    cm_spy(const cm_spy&)
+    cm_spy(const cm_spy& a)
+        : calls{a.calls}
     {
         *calls += "cc";
     }
 
-    cm_spy(cm_spy&&)
+    cm_spy(cm_spy&& a)
+        : calls{a.calls}
     {
         *calls += "mc";
     }
 
-    cm_spy& operator=(const cm_spy&)
+    cm_spy& operator=(const cm_spy& a)
     {
+        calls = a.calls;
         *calls += "ca";
         return *this;
     }
 
-    cm_spy& operator=(cm_spy&&)
+    cm_spy& operator=(cm_spy&& a)
     {
+        calls = a.calls;
         *calls += "ma";
         return *this;
     }
