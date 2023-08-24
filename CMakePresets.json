@@ -1,8 +1,8 @@
 {
-  "version": 3,
+  "version": 6,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 21,
+    "minor": 23,
     "patch": 0
   },
   "configurePresets": [
@@ -15,6 +15,11 @@
         "CMAKE_CXX_STANDARD": "20",
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
       }
+    },
+    {
+      "name": "ninja",
+      "hidden": true,
+      "generator": "Ninja"
     },
     {
       "name": "based",
@@ -94,6 +99,12 @@
         "shrd",
         "clangd"
       ]
+    },
+    {
+      "name": "msvc",
+      "inherits": [
+        "base"
+      ]
     }
   ],
   "buildPresets": [
@@ -128,6 +139,16 @@
     {
       "name": "clangdshrd",
       "configurePreset": "clangdshrd"
+    },
+    {
+      "name": "msvc",
+      "configurePreset": "msvc",
+      "configuration": "Release"
+    },
+    {
+      "name": "msvcd",
+      "configurePreset": "msvc",
+      "configuration": "Debug"
     }
   ],
   "testPresets": [
@@ -192,6 +213,58 @@
       "configurePreset": "clangdshrd",
       "inherits": [
         "base"
+      ]
+    },
+    {
+      "name": "msvc",
+      "configurePreset": "msvc",
+      "inherits": [
+        "base"
+      ],
+      "configuration": "Release"
+    },
+    {
+      "name": "msvcd",
+      "configurePreset": "msvc",
+      "inherits": [
+        "base"
+      ],
+      "configuration": "Debug"
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "msvc",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "msvc"
+        },
+        {
+          "type": "build",
+          "name": "msvc"
+        },
+        {
+          "type": "test",
+          "name": "msvc"
+        }
+      ]
+    },
+    {
+      "name": "msvcd",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "msvc"
+        },
+        {
+          "type": "build",
+          "name": "msvcd"
+        },
+        {
+          "type": "test",
+          "name": "msvcd"
+        }
       ]
     }
   ]
