@@ -58,16 +58,22 @@ using messages = std::vector<message>;
 
 messages& msgs()
 {
-    static messages ms{};
+    thread_local static messages ms{};
     return ms;
+}
+
+template <class Stream, class... A>
+Stream& stream_args_into(Stream& str, const A&... args)
+{
+    (str << ... << args);
+    return str;
 }
 
 template <class... A>
 [[nodiscard]] message msg_from_ostringstream(const A&... args)
 {
     std::ostringstream str{};
-    (str << ... << args);
-    return str.str();
+    return stream_args_into(str, args...).str();
 }
 
 template <class Tup>
@@ -107,22 +113,37 @@ template <class... A>
 
 int a(int i)
 {
-    const auto& in{make_intent("intent a with i:", i)};
+    const auto& in{make_intent("a(", i, ')')};
     if (i < 0)
         throw std::runtime_error{"i < 0"};
     return i;
 }
 
-int a_range(int min, int max)
+std::pair<int, std::string> a_range(int min, int max)
 {
-    const auto& i{make_intent("a(", min, ", ", max, ")")};
     auto accu{int{}};
-    for (; min < max; ++min)
+    auto msg{""s};
+    for (int idx{min}; idx < max; ++idx)
     {
-        const auto& ii{make_intent("accu:", accu, " min:", min)};
-        accu += a(min);
+        try
+        {
+            const auto& i{make_intent("a_range(", min, ", ", max, ")")};
+            const auto& ii{make_intent("accu:", accu, " idx:", idx)};
+            accu += a(idx);
+        }
+        catch (...)
+        {
+            msg += std::accumulate(msgs().cbegin(),
+                                   msgs().cend(),
+                                   ""s,
+                                   [](auto accu, const auto& s) {
+                                       accu += s + '\n';
+                                       return accu;
+                                   });
+            msgs().clear();
+        }
     }
-    return accu;
+    return {accu, msg};
 }
 
 struct test_intent
@@ -140,11 +161,6 @@ struct test_intent
 
 BOOST_FIXTURE_TEST_SUITE(intent_tests, test_intent)
 
-BOOST_AUTO_TEST_CASE(intent_is_empty)
-{
-    BOOST_TEST(msgs().empty());
-}
-
 BOOST_AUTO_TEST_CASE(no_intent_on_success)
 {
     const auto& i{make_intent("start", 0)};
@@ -156,18 +172,16 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
 {
     try
     {
-        const auto& i{make_intent("a(-1)", -1)};
+        const auto& i{make_intent("test a(", -1, ')')};
         a(-1);
     }
-    catch (const std::exception& e)
+    catch (...)
     {
-        BOOST_TEST(!msgs().empty());
-        BOOST_TEST(msgs().size() == 2);
-        BOOST_TEST(msgs()[0] == "intent a with i:-1");
-        BOOST_TEST(msgs()[1] == "a(-1)-1");
-
-        msgs().clear();
     }
+    BOOST_REQUIRE(!msgs().empty());
+    BOOST_REQUIRE(msgs().size() == 2);
+    BOOST_TEST(msgs()[0] == "a(-1)");
+    BOOST_TEST(msgs()[1] == "test a(-1)");
 }
 
 BOOST_AUTO_TEST_CASE(intent_only_views_data)
@@ -205,9 +219,26 @@ BOOST_AUTO_TEST_CASE(intent_copies_data_if_rvalue, *test::disabled())
     BOOST_TEST(!msgs().empty());
 }
 
+BOOST_AUTO_TEST_CASE(intent_from_a_range)
+{
+    {
+        const auto& a{a_range(0, 1)};
+        BOOST_TEST(a.second == "");
+    }
+    {
+        const auto& a{a_range(-2, 0)};
+        BOOST_TEST(a.second == "a(-2)\n"
+                               "accu:0 idx:-2\n"
+                               "a_range(-2, 0)\n"
+                               "a(-1)\n"
+                               "accu:0 idx:-1\n"
+                               "a_range(-2, 0)\n");
+    }
+}
+
 BOOST_AUTO_TEST_CASE(intent_from_multiple_threads)
 {
-    auto results{std::vector<std::future<int>>{}};
+    auto results{std::vector<std::future<std::pair<int, std::string>>>{}};
 
     for (auto i{int{-50}}; i < 50; i += 10)
     {
@@ -215,16 +246,15 @@ BOOST_AUTO_TEST_CASE(intent_from_multiple_threads)
     }
 
     for (auto& f : results)
+    {
         f.wait();
+    }
 
-    BOOST_TEST(!msgs().empty());
-    BOOST_TEST(std::accumulate(msgs().cbegin(),
-                               msgs().cend(),
-                               ""s,
-                               [](auto accu, const auto& s) {
-                                   accu += s + '\n';
-                                   return accu;
-                               }) == "");
+    auto msg{""s};
+    for (auto& f : results)
+    {
+        msg += f.get().second;
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
