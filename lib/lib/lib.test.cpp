@@ -114,8 +114,8 @@ template <class... A>
 int a(int i)
 {
     const auto& in{make_intent("a(", i, ')')};
-    if (i < 0)
-        throw std::runtime_error{"i < 0"};
+    if (i % 2 != 0)
+        throw std::runtime_error{"odd number not allowed"};
     return i;
 }
 
@@ -226,13 +226,10 @@ BOOST_AUTO_TEST_CASE(intent_from_a_range)
         BOOST_TEST(a.second == "");
     }
     {
-        const auto& a{a_range(-2, 0)};
-        BOOST_TEST(a.second == "a(-2)\n"
-                               "accu:0 idx:-2\n"
-                               "a_range(-2, 0)\n"
-                               "a(-1)\n"
+        const auto& a{a_range(-1, 0)};
+        BOOST_TEST(a.second == "a(-1)\n"
                                "accu:0 idx:-1\n"
-                               "a_range(-2, 0)\n");
+                               "a_range(-1, 0)\n");
     }
 }
 
@@ -255,6 +252,8 @@ BOOST_AUTO_TEST_CASE(intent_from_multiple_threads)
     {
         msg += f.get().second;
     }
+
+    BOOST_TEST(!msg.empty());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
