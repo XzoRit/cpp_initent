@@ -11,6 +11,79 @@ namespace test = boost::unit_test;
 
 using namespace std::string_literals;
 
+struct source_location
+{
+    [[nodiscard]] static consteval source_location current(
+#if (__has_builtin(__builtin_FILE))
+        const char* const _File_ = __builtin_FILE(),
+#else
+        const char* const _File_,
+#endif
+#if (__has_builtin(__builtin_LINE))
+        const std::uint_least32_t _Line_ = __builtin_LINE(),
+#else
+        const std::uint_least32_t _Line_,
+#endif
+#if (__has_builtin(__builtin_COLUMN))
+        const std::uint_least32_t _Column_ = __builtin_COLUMN(),
+#else
+        const std::uint_least32_t _Column_ = 0,
+#endif
+#if (__has_builtin(__builtin_FUNCSIG))
+        const char* const _Function_ = __builtin_FUNCSIG()
+#elif (__has_builtin(__builtin_FUNCTION))
+        const char* const _Function_ = __builtin_FUNCTION()
+#else
+        const char* const _Function_ = ""
+#endif
+            ) noexcept
+    {
+        source_location _Result{};
+        _Result._Line = _Line_;
+        _Result._Column = _Column_;
+        _Result._File = _File_;
+        _Result._Function = _Function_;
+        return _Result;
+    }
+
+    [[nodiscard]] constexpr source_location() noexcept = default;
+
+    [[nodiscard]] constexpr std::uint_least32_t line() const noexcept
+    {
+        return _Line;
+    }
+
+    [[nodiscard]] constexpr std::uint_least32_t column() const noexcept
+    {
+        return _Column;
+    }
+
+    [[nodiscard]] constexpr const char* file_name() const noexcept
+    {
+        return _File;
+    }
+
+    [[nodiscard]] constexpr const char* function_name() const noexcept
+    {
+        return _Function;
+    }
+
+  private:
+    std::uint_least32_t _Line{};
+    std::uint_least32_t _Column{};
+    const char* _File = "unknown_file";
+    const char* _Function = "unknown_func";
+};
+
+#define CURRENT_LOC source_location::current(__FILE__, __LINE__, 0, __func__)
+
+std::ostream& operator<<(std::ostream& s, const source_location& l)
+{
+    s << l.file_name() << ':' << l.line() << ':' << l.column() << ':'
+      << l.function_name() << ':';
+    return s;
+}
+
 using message = std::string;
 using messages = std::vector<message>;
 
