@@ -11,48 +11,6 @@ namespace test = boost::unit_test;
 
 using namespace std::string_literals;
 
-struct cm_spy
-{
-    explicit cm_spy(std::string* s)
-        : calls{s}
-    {
-    }
-
-    cm_spy(const cm_spy& a)
-        : calls{a.calls}
-    {
-        *calls += "cc";
-    }
-
-    cm_spy(cm_spy&& a)
-        : calls{a.calls}
-    {
-        *calls += "mc";
-    }
-
-    cm_spy& operator=(const cm_spy& a)
-    {
-        calls = a.calls;
-        *calls += "ca";
-        return *this;
-    }
-
-    cm_spy& operator=(cm_spy&& a)
-    {
-        calls = a.calls;
-        *calls += "ma";
-        return *this;
-    }
-
-    std::string* calls;
-};
-
-std::ostream& operator<<(std::ostream& s, const cm_spy&)
-{
-    s << "cm_spy";
-    return s;
-}
-
 using message = std::string;
 using messages = std::vector<message>;
 
@@ -144,6 +102,48 @@ std::pair<int, std::string> a_range(int min, int max)
         }
     }
     return {accu, msg};
+}
+
+struct cm_spy
+{
+    explicit cm_spy(std::string* s)
+        : calls{s}
+    {
+    }
+
+    cm_spy(const cm_spy& a)
+        : calls{a.calls}
+    {
+        *calls += "cc";
+    }
+
+    cm_spy(cm_spy&& a)
+        : calls{a.calls}
+    {
+        *calls += "mc";
+    }
+
+    cm_spy& operator=(const cm_spy& a)
+    {
+        calls = a.calls;
+        *calls += "ca";
+        return *this;
+    }
+
+    cm_spy& operator=(cm_spy&& a)
+    {
+        calls = a.calls;
+        *calls += "ma";
+        return *this;
+    }
+
+    std::string* calls;
+};
+
+std::ostream& operator<<(std::ostream& s, const cm_spy&)
+{
+    s << "cm_spy";
+    return s;
 }
 
 struct test_intent
