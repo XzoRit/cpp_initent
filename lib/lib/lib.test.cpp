@@ -224,7 +224,7 @@ struct [[maybe_unused]] intent
 template <class... A>
 [[nodiscard]] auto make_intent(source_location sl, A&&... args)
 {
-    return intent{std::tie(args...), sl};
+    return intent{std::forward_as_tuple(args...), sl};
 }
 
 using Error = Exception<std::runtime_error>;
