@@ -84,7 +84,90 @@ std::ostream& operator<<(std::ostream& s, const source_location& l)
     return s;
 }
 
-using message = std::string;
+template <class Exception>
+class [[maybe_unused]] Throw
+{
+  public:
+    explicit Throw(source_location srcLoc = source_location::current())
+        : m_srcLoc{srcLoc}
+    {
+    }
+
+#if defined(DFL_CONFIG_COMPILER_MSVC)
+#pragma warning(push)
+#pragma warning(disable : 4722)
+#endif
+    [[noreturn]] ~Throw() noexcept(false)
+    {
+        throw Exception{m_stream.str().c_str(), m_srcLoc};
+    }
+#if defined(COMPILER_MSVC)
+#pragma warning(pop)
+#endif
+
+  private:
+    template <class FormatStreamable>
+    friend Throw& operator<<(Throw& r, const FormatStreamable& it)
+    {
+        r.m_stream << it;
+        return r;
+    }
+
+    template <class FormatStreamable>
+    friend Throw&& operator<<(Throw&& r, const FormatStreamable& it)
+    {
+        r.m_stream << it;
+        return std::move(r);
+    }
+
+    std::stringstream m_stream{};
+    source_location m_srcLoc{};
+};
+
+template <class BaseException>
+class Exception : public BaseException
+{
+  public:
+    using BaseException::BaseException;
+
+    explicit Exception(const char* msg,
+                       source_location srcLoc = source_location::current())
+        : BaseException{msg}
+        , m_srcLoc{srcLoc}
+    {
+    }
+
+    source_location sourceLocation() const noexcept
+    {
+        return m_srcLoc;
+    }
+
+  private:
+    source_location m_srcLoc{};
+};
+
+struct message
+{
+    message(std::string s, source_location sl)
+        : loc{sl}
+        , m{std::move(s)}
+    {
+    }
+
+    [[nodiscard]] const std::string& msg() const
+    {
+        return m;
+    }
+
+    [[nodiscard]] source_location location() const
+    {
+        return loc;
+    }
+
+    std::string m{};
+    source_location loc;
+};
+
 using messages = std::vector<message>;
 
 messages& msgs()
@@ -101,7 +184,7 @@ Stream& stream_args_into(Stream& str, const A&... args)
 }
 
 template <class... A>
-[[nodiscard]] message msg_from_ostringstream(const A&... args)
+[[nodiscard]] std::string msg_from_ostringstream(const A&... args)
 {
     std::ostringstream str{};
     return stream_args_into(str, args...).str();
@@ -110,8 +193,9 @@ template <class... A>
 template <class Tup>
 struct [[maybe_unused]] intent
 {
-    explicit intent(Tup args)
+    explicit intent(Tup args, source_location sl)
         : tup{args}
+        , loc{sl}
     {
     }
 
@@ -122,8 +206,8 @@ struct [[maybe_unused]] intent
         try
         {
             msgs().push_back(std::apply(
-                [](const auto&... args) {
-                    return msg_from_ostringstream(args...);
+                [this](const auto&... args) {
+                    return message{msg_from_ostringstream(args...), loc};
                 },
                 tup));
         }
@@ -134,19 +218,22 @@ struct [[maybe_unused]] intent
 
     int except_count{std::uncaught_exceptions()};
     Tup tup;
+    source_location loc;
 };
 
 template <class... A>
-[[nodiscard]] auto make_intent(A&&... args)
+[[nodiscard]] auto make_intent(source_location sl, A&&... args)
 {
-    return intent{std::tie(args...)};
+    return intent{std::tie(args...), sl};
 }
+
+using Error = Exception<std::runtime_error>;
 
 int a(int i)
 {
-    const auto& in{make_intent("a(", i, ')')};
+    const auto& in{make_intent(CURRENT_LOC, "a(", i, ')')};
     if (i % 2 != 0)
-        throw std::runtime_error{"odd number not allowed"};
+        Throw<Error>{CURRENT_LOC} << "odd number not allowed";
     return i;
 }
 
@@ -158,8 +245,10 @@ std::pair<int, std::string> a_range(int min, int max)
     {
         try
         {
-            const auto& i{make_intent("a_range(", min, ", ", max, ")")};
-            const auto& ii{make_intent("accu:", accu, " idx:", idx)};
+            const auto& i{
+                make_intent(CURRENT_LOC, "a_range(", min, ", ", max, ")")};
+            const auto& ii{
+                make_intent(CURRENT_LOC, "accu:", accu, " idx:", idx)};
             accu += a(idx);
         }
         catch (...)
@@ -167,8 +256,8 @@ std::pair<int, std::string> a_range(int min, int max)
             msg += std::accumulate(msgs().cbegin(),
                                    msgs().cend(),
                                    ""s,
-                                   [](auto accu, const auto& s) {
-                                       accu += s + '\n';
+                                   [](auto accu, const auto& m) {
+                                       accu += m.msg() + '\n';
                                        return accu;
                                    });
             msgs().clear();
@@ -236,16 +325,17 @@ BOOST_FIXTURE_TEST_SUITE(intent_tests, test_intent)
 
 BOOST_AUTO_TEST_CASE(no_intent_on_success)
 {
-    const auto& i{make_intent("start", 0)};
+    const auto& i{make_intent(CURRENT_LOC, "start", 0)};
     a(0);
     BOOST_TEST(msgs().empty());
 }
 
 BOOST_AUTO_TEST_CASE(intent_on_failure)
 {
+    const auto loc{CURRENT_LOC};
     try
     {
-        const auto& i{make_intent("test a(", -1, ')')};
+        const auto& i{make_intent(loc, "test a(", -1, ')')};
         a(-1);
     }
     catch (...)
@@ -253,8 +343,12 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
     }
     BOOST_REQUIRE(!msgs().empty());
     BOOST_REQUIRE(msgs().size() == 2);
-    BOOST_TEST(msgs()[0] == "a(-1)");
-    BOOST_TEST(msgs()[1] == "test a(-1)");
+    BOOST_TEST(msgs()[0].msg() == "a(-1)");
+    BOOST_TEST(msgs()[1].msg() == "test a(-1)");
+    BOOST_TEST(msgs()[1].location().file_name() == loc.file_name());
+    BOOST_TEST(msgs()[1].location().line() == loc.line());
+    BOOST_TEST(msgs()[1].location().column() == loc.column());
+    BOOST_TEST(msgs()[1].location().function_name() == loc.function_name());
 }
 
 BOOST_AUTO_TEST_CASE(intent_only_views_data)
@@ -264,7 +358,7 @@ BOOST_AUTO_TEST_CASE(intent_only_views_data)
 
     try
     {
-        const auto i{make_intent(spy)};
+        const auto i{make_intent(CURRENT_LOC, spy)};
         throw 42;
     }
     catch (...)
@@ -281,7 +375,7 @@ BOOST_AUTO_TEST_CASE(intent_copies_data_if_rvalue, *test::disabled())
 
     try
     {
-        const auto i{make_intent(cm_spy{&calls})};
+        const auto i{make_intent(CURRENT_LOC, cm_spy{&calls})};
         throw 42;
     }
     catch (...)
