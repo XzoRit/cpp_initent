@@ -241,27 +241,27 @@ std::pair<int, std::string> a_range(int min, int max)
 {
     auto accu{int{}};
     auto msg{""s};
-    for (int idx{min}; idx < max; ++idx)
+    try
     {
-        try
+        const auto& i{
+            make_intent(CURRENT_LOC, "a_range(", min, ", ", max, ")")};
+        for (int idx{min}; idx < max; ++idx)
         {
-            const auto& i{
-                make_intent(CURRENT_LOC, "a_range(", min, ", ", max, ")")};
             const auto& ii{
                 make_intent(CURRENT_LOC, "accu:", accu, " idx:", idx)};
             accu += a(idx);
         }
-        catch (...)
-        {
-            msg += std::accumulate(msgs().cbegin(),
-                                   msgs().cend(),
-                                   ""s,
-                                   [](auto accu, const auto& m) {
-                                       accu += m.msg() + '\n';
-                                       return accu;
-                                   });
-            msgs().clear();
-        }
+    }
+    catch (...)
+    {
+        msg += std::accumulate(msgs().cbegin(),
+                               msgs().cend(),
+                               ""s,
+                               [](auto accu, const auto& m) {
+                                   accu += m.msg() + '\n';
+                                   return accu;
+                               });
+        msgs().clear();
     }
     return {accu, msg};
 }
