@@ -7,8 +7,6 @@
 
 namespace
 {
-namespace test = boost::unit_test;
-
 using namespace std::string_literals;
 
 struct source_location
@@ -190,11 +188,11 @@ template <class... A>
     return stream_args_into(str, args...).str();
 }
 
-template <class Tup>
+template <class... Args>
 struct [[maybe_unused]] intent
 {
-    explicit intent(Tup args, source_location sl)
-        : tup{args}
+    explicit intent(source_location sl, Args... args)
+        : tup{std::move(args)...}
         , loc{sl}
     {
     }
@@ -216,22 +214,16 @@ struct [[maybe_unused]] intent
         }
     }
 
+    std::tuple<Args...> tup;
     int except_count{std::uncaught_exceptions()};
-    Tup tup;
     source_location loc;
 };
-
-template <class... A>
-[[nodiscard]] auto make_intent(source_location sl, A&&... args)
-{
-    return intent{std::forward_as_tuple(args...), sl};
-}
 
 using Error = Exception<std::runtime_error>;
 
 int a(int i)
 {
-    const auto& in{make_intent(CURRENT_LOC, "a(", i, ')')};
+    const auto& in{intent{CURRENT_LOC, "a(", i, ')'}};
     if (i % 2 != 0)
         Throw<Error>{CURRENT_LOC} << "odd number not allowed";
     return i;
@@ -243,12 +235,10 @@ std::pair<int, std::string> a_range(int min, int max)
     auto msg{""s};
     try
     {
-        const auto& i{
-            make_intent(CURRENT_LOC, "a_range(", min, ", ", max, ")")};
+        const auto& i{intent{CURRENT_LOC, "a_range(", min, ", ", max, ")"}};
         for (int idx{min}; idx < max; ++idx)
         {
-            const auto& ii{
-                make_intent(CURRENT_LOC, "accu:", accu, " idx:", idx)};
+            const auto& ii{intent{CURRENT_LOC, "accu:", accu, " idx:", idx}};
             accu += a(idx);
         }
     }
@@ -325,7 +315,7 @@ BOOST_FIXTURE_TEST_SUITE(intent_tests, test_intent)
 
 BOOST_AUTO_TEST_CASE(no_intent_on_success)
 {
-    const auto& i{make_intent(CURRENT_LOC, "start", 0)};
+    const auto& i{intent{CURRENT_LOC, "start", 0}};
     a(0);
     BOOST_TEST(msgs().empty());
 }
@@ -335,7 +325,7 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
     const auto loc{CURRENT_LOC};
     try
     {
-        const auto& i{make_intent(loc, "test a(", -1, ')')};
+        const auto& i{intent{loc, "test a(", -1, ')'}};
         a(-1);
     }
     catch (...)
@@ -351,38 +341,38 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
     BOOST_TEST(msgs()[1].location().function_name() == loc.function_name());
 }
 
-BOOST_AUTO_TEST_CASE(intent_only_views_data)
+BOOST_AUTO_TEST_CASE(intent_copies_lvalue)
 {
     auto calls{""s};
     auto spy{cm_spy{&calls}};
 
     try
     {
-        const auto i{make_intent(CURRENT_LOC, spy)};
+        const auto i{intent{CURRENT_LOC, spy}};
         throw 42;
     }
     catch (...)
     {
     }
 
-    BOOST_TEST(calls == "");
+    BOOST_TEST(calls == "ccmc");
     BOOST_TEST(!msgs().empty());
 }
 
-BOOST_AUTO_TEST_CASE(intent_copies_data_if_rvalue, *test::disabled())
+BOOST_AUTO_TEST_CASE(intent_moves_rvalue)
 {
     auto calls{""s};
 
     try
     {
-        const auto i{make_intent(CURRENT_LOC, cm_spy{&calls})};
+        const auto i{intent{CURRENT_LOC, cm_spy{&calls}}};
         throw 42;
     }
     catch (...)
     {
     }
 
-    BOOST_TEST(calls == "cc");
+    BOOST_TEST(calls == "mc");
     BOOST_TEST(!msgs().empty());
 }
 
@@ -424,4 +414,4 @@ BOOST_AUTO_TEST_CASE(intent_from_multiple_threads)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-}
+            }
