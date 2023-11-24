@@ -376,6 +376,40 @@ BOOST_AUTO_TEST_CASE(intent_moves_rvalue)
     BOOST_TEST(!msgs().empty());
 }
 
+BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
+{
+    try
+    {
+        auto a{0};
+        const auto i{intent{CURRENT_LOC, a}};
+        ++a;
+        throw 42;
+    }
+    catch (...)
+    {
+    }
+
+    BOOST_REQUIRE(msgs().size() == 1);
+    BOOST_TEST(msgs()[0].msg() == "0");
+}
+
+BOOST_AUTO_TEST_CASE(intent_can_take_ref)
+{
+    try
+    {
+        auto a{0};
+        const auto i{intent{CURRENT_LOC, std::cref(a)}};
+        ++a;
+        throw 42;
+    }
+    catch (...)
+    {
+    }
+
+    BOOST_REQUIRE(msgs().size() == 1);
+    BOOST_TEST(msgs()[0].msg() == "1");
+}
+
 BOOST_AUTO_TEST_CASE(intent_from_a_range)
 {
     {
@@ -414,4 +448,4 @@ BOOST_AUTO_TEST_CASE(intent_from_multiple_threads)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-            }
+}
