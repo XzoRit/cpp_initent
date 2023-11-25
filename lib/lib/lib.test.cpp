@@ -119,7 +119,7 @@ class [[maybe_unused]] Throw
     }
 
     std::stringstream m_stream{};
-    source_location m_srcLoc{};
+    source_location m_srcLoc{source_location::current()};
 };
 
 template <class BaseException>
@@ -141,12 +141,12 @@ class Exception : public BaseException
     }
 
   private:
-    source_location m_srcLoc{};
+    source_location m_srcLoc{source_location::current()};
 };
 
 struct message
 {
-    message(std::string s, source_location sl)
+    message(std::string s, source_location sl = source_location::current())
         : loc{sl}
         , m{std::move(s)}
     {
@@ -163,7 +163,7 @@ struct message
     }
 
     std::string m{};
-    source_location loc;
+    source_location loc{source_location::current()};
 };
 
 using messages = std::vector<message>;
@@ -197,6 +197,11 @@ struct [[maybe_unused]] intent
     {
     }
 
+    explicit intent(Args... args)
+        : tup{std::move(args)...}
+    {
+    }
+
     ~intent()
     {
         if (std::uncaught_exceptions() <= except_count)
@@ -216,7 +221,7 @@ struct [[maybe_unused]] intent
 
     std::tuple<Args...> tup;
     int except_count{std::uncaught_exceptions()};
-    source_location loc;
+    source_location loc{source_location::current()};
 };
 
 using Error = Exception<std::runtime_error>;
