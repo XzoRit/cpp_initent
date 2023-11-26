@@ -189,7 +189,7 @@ template <class... A>
 }
 
 template <class... Args>
-struct [[maybe_unused]] intent
+struct [[nodiscard]] intent
 {
     explicit intent(source_location sl, Args... args)
         : tup{std::move(args)...}
