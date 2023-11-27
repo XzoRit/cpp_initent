@@ -5,75 +5,158 @@
 #include <string>
 #include <vector>
 
-namespace
-{
+#if __has_include(<source_location>)
+#include <source_location>
+#endif
+
 using namespace std::string_literals;
 
+namespace
+{
+#if defined(__cpp_lib_source_location)
+using source_location = std::source_location;
+#define CURRENT_LOC source_location::current()
+#elif __has_builtin(__builtin_source_location)
 struct source_location
 {
-    [[nodiscard]] static consteval source_location current(
-#if (__has_builtin(__builtin_FILE))
-        const char* const _File_ = __builtin_FILE(),
-#else
-        const char* const _File_,
-#endif
-#if (__has_builtin(__builtin_LINE))
-        const std::uint_least32_t _Line_ = __builtin_LINE(),
-#else
-        const std::uint_least32_t _Line_,
-#endif
-#if (__has_builtin(__builtin_COLUMN))
-        const std::uint_least32_t _Column_ = __builtin_COLUMN(),
-#else
-        const std::uint_least32_t _Column_ = 0,
-#endif
-#if (__has_builtin(__builtin_FUNCSIG))
-        const char* const _Function_ = __builtin_FUNCSIG()
-#elif (__has_builtin(__builtin_FUNCTION))
-        const char* const _Function_ = __builtin_FUNCTION()
-#else
-        const char* const _Function_ = ""
-#endif
-            ) noexcept
+  private:
+    struct impl_t
     {
-        source_location _Result{};
-        _Result._Line = _Line_;
-        _Result._Column = _Column_;
-        _Result._File = _File_;
-        _Result._Function = _Function_;
-        return _Result;
+        const char* fil;
+        const char* funcname;
+        std::uint_least32_t lin;
+        std::uint_least32_t col;
+    };
+    using builtin_type = decltype(__builtin_source_location());
+
+  public:
+    [[nodiscard]] static consteval source_location current(
+        builtin_type slptr = __builtin_source_location()) noexcept
+    {
+        source_location ret;
+        ret.impl = static_cast<const impl_t*>(slptr);
+        return ret;
     }
+
+    [[nodiscard]] constexpr source_location() noexcept
+    {
+    }
+
+    [[nodiscard]] constexpr std::uint_least32_t line() const noexcept
+    {
+        return impl ? impl->lin : 0u;
+    }
+
+    [[nodiscard]] constexpr std::uint_least32_t column() const noexcept
+    {
+        return impl ? impl->col : 0u;
+    }
+
+    [[nodiscard]] constexpr const char* file_name() const noexcept
+    {
+        return impl ? impl->fil : "";
+    }
+
+    [[nodiscard]] constexpr const char* function_name() const noexcept
+    {
+        return impl ? impl->funcname : "";
+    }
+
+  private:
+    const impl_t* impl{nullptr};
+};
+#define CURRENT_LOC source_location::current()
+#else
+struct source_location
+{
+#if (__has_builtin(__builtin_FILE) && __has_builtin(__builtin_LINE) &&         \
+     __has_builtin(__builtin_COLUMN) && __has_builtin(__builtin_FUNCSIG))
+    [[nodiscard]] static consteval source_location current(
+        const char* const f = __builtin_FILE(),
+        const std::uint_least32_t l = __builtin_LINE(),
+        const std::uint_least32_t c = __builtin_COLUMN(),
+        const char* const func = __builtin_FUNCSIG()) noexcept
+    {
+        source_location res{};
+        res.lin = l;
+        res.col = c;
+        res.fil = f;
+        res.funcname = func;
+        return res;
+    }
+#define CURRENT_LOC source_location::current()
+#elif (__has_builtin(__builtin_FILE) && __has_builtin(__builtin_LINE) &&       \
+       __has_builtin(__builtin_COLUMN) && __has_builtin(__builtin_FUNCTION))
+    [[nodiscard]] static consteval source_location current(
+        const char* const f = __builtin_FILE(),
+        const std::uint_least32_t l = __builtin_LINE(),
+        const std::uint_least32_t c = __builtin_COLUMN(),
+        const char* const func = __builtin_FUNCTION()) noexcept
+    {
+        source_location res{};
+        res.lin = l;
+        res.col = c;
+        res.fil = f;
+        res.funcname = func;
+        return res;
+    }
+#define CURRENT_LOC source_location::current()
+#else
+    [[nodiscard]] static consteval source_location current(
+        const char* const f,
+        const std::uint_least32_t l,
+        const std::uint_least32_t c,
+        const char* const func) noexcept
+    {
+        source_location res{};
+        res.lin = l;
+        res.col = c;
+        res.fil = f;
+        res.funcname = func;
+        return res;
+    }
+
+    [[nodiscard]] static constexpr source_location current() noexcept
+    {
+        return {};
+    }
+#if defined(_MSC_VER) && !defined(__clang__)
+#define CURRENT_LOC source_location::current(__FILE__, __LINE__, 0, __FUNCSIG__)
+#else
+#define CURRENT_LOC                                                            \
+    source_location::current(__FILE__, __LINE__, 0, __PRETTY_FUNCTION__)
+#endif
+#endif
 
     [[nodiscard]] constexpr source_location() noexcept = default;
 
     [[nodiscard]] constexpr std::uint_least32_t line() const noexcept
     {
-        return _Line;
+        return lin;
     }
 
     [[nodiscard]] constexpr std::uint_least32_t column() const noexcept
     {
-        return _Column;
+        return col;
     }
 
     [[nodiscard]] constexpr const char* file_name() const noexcept
     {
-        return _File;
+        return fil;
     }
 
     [[nodiscard]] constexpr const char* function_name() const noexcept
     {
-        return _Function;
+        return funcname;
     }
 
   private:
-    std::uint_least32_t _Line{};
-    std::uint_least32_t _Column{};
-    const char* _File = "unknown_file";
-    const char* _Function = "unknown_func";
+    std::uint_least32_t lin{};
+    std::uint_least32_t col{};
+    const char* fil = "unknown_file";
+    const char* funcname = "unknown_func";
 };
-
-#define CURRENT_LOC source_location::current(__FILE__, __LINE__, 0, __func__)
+#endif
 
 std::ostream& operator<<(std::ostream& s, const source_location& l)
 {
@@ -86,7 +169,7 @@ template <class Exception>
 class [[maybe_unused]] Throw
 {
   public:
-    explicit Throw(source_location srcLoc = source_location::current())
+    explicit Throw(source_location srcLoc = CURRENT_LOC)
         : m_srcLoc{srcLoc}
     {
     }
@@ -119,7 +202,7 @@ class [[maybe_unused]] Throw
     }
 
     std::stringstream m_stream{};
-    source_location m_srcLoc{source_location::current()};
+    source_location m_srcLoc{CURRENT_LOC};
 };
 
 template <class BaseException>
@@ -128,8 +211,7 @@ class Exception : public BaseException
   public:
     using BaseException::BaseException;
 
-    explicit Exception(const char* msg,
-                       source_location srcLoc = source_location::current())
+    explicit Exception(const char* msg, source_location srcLoc = CURRENT_LOC)
         : BaseException{msg}
         , m_srcLoc{srcLoc}
     {
@@ -141,12 +223,12 @@ class Exception : public BaseException
     }
 
   private:
-    source_location m_srcLoc{source_location::current()};
+    source_location m_srcLoc{CURRENT_LOC};
 };
 
 struct message
 {
-    message(std::string s, source_location sl = source_location::current())
+    message(std::string s, source_location sl = CURRENT_LOC)
         : loc{sl}
         , m{std::move(s)}
     {
@@ -163,7 +245,7 @@ struct message
     }
 
     std::string m{};
-    source_location loc{source_location::current()};
+    source_location loc{CURRENT_LOC};
 };
 
 using messages = std::vector<message>;
@@ -221,7 +303,7 @@ struct [[nodiscard]] intent
 
     std::tuple<Args...> tup;
     int except_count{std::uncaught_exceptions()};
-    source_location loc{source_location::current()};
+    source_location loc{CURRENT_LOC};
 };
 
 using Error = Exception<std::runtime_error>;
