@@ -4,7 +4,14 @@ set(SOURCE ${INCLUDE}/lib)
 
 add_library(lib)
 
-target_sources(lib PRIVATE "${SOURCE}/lib.cpp" "${SOURCE}/lib.hpp")
+target_sources(
+  lib
+  PRIVATE
+  "${SOURCE}/lib.cpp"
+  "${SOURCE}/lib.hpp"
+  "${SOURCE}/source_location.cpp"
+  "${SOURCE}/source_location.hpp"
+)
 
 target_include_directories(lib PUBLIC ${INCLUDE})
 
@@ -15,7 +22,11 @@ find_package(Threads REQUIRED)
 add_executable(lib_test)
 
 target_sources(
-  lib_test PRIVATE "${SOURCE}/lib.test.cpp" "${SOURCE}/main.test.cpp"
+  lib_test
+  PRIVATE
+  "${SOURCE}/lib.test.cpp"
+  "${SOURCE}/source_location.test.cpp"
+  "${SOURCE}/main.test.cpp"
 )
 
 target_link_libraries(lib_test PRIVATE lib::lib Boost::unit_test_framework Threads::Threads)
