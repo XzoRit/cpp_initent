@@ -2,7 +2,7 @@
   "version": 6,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 23,
+    "minor": 25,
     "patch": 0
   },
   "configurePresets": [
@@ -264,6 +264,74 @@
         {
           "type": "test",
           "name": "msvcd"
+        }
+      ]
+    },
+    {
+      "name": "gcc",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "gcc"
+        },
+        {
+          "type": "build",
+          "name": "gcc"
+        },
+        {
+          "type": "test",
+          "name": "gcc"
+        }
+      ]
+    },
+    {
+      "name": "gccd",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "gccd"
+        },
+        {
+          "type": "build",
+          "name": "gccd"
+        },
+        {
+          "type": "test",
+          "name": "gccd"
+        }
+      ]
+    },
+    {
+      "name": "clang",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "clang"
+        },
+        {
+          "type": "build",
+          "name": "clang"
+        },
+        {
+          "type": "test",
+          "name": "clang"
+        }
+      ]
+    },
+    {
+      "name": "clangd",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "clangd"
+        },
+        {
+          "type": "build",
+          "name": "clangd"
+        },
+        {
+          "type": "test",
+          "name": "clangd"
         }
       ]
     }
