@@ -17,11 +17,6 @@ template <class Exception>
 class [[maybe_unused]] Throw
 {
   public:
-    explicit Throw(source_location srcLoc = source_location::current())
-        : m_srcLoc{srcLoc}
-    {
-    }
-
 #if defined(DFL_CONFIG_COMPILER_MSVC)
 #pragma warning(push)
 #pragma warning(disable : 4722)
@@ -161,7 +156,7 @@ int a(int i)
 {
     const auto& in{intent{source_location::current(), "a(", i, ')'}};
     if (i % 2 != 0)
-        Throw<Error>{source_location::current()} << "odd number not allowed";
+        Throw<Error>{} << "odd number not allowed";
     return i;
 }
 
