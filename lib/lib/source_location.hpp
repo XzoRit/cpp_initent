@@ -11,7 +11,6 @@ namespace xzr::ext
 {
 #if defined(__cpp_lib_source_location)
 using source_location = std::source_location;
-#define CURRENT_LOC ::xzr::ext::source_location::current()
 #elif __has_builtin(__builtin_source_location)
 struct source_location
 {
@@ -61,7 +60,6 @@ struct source_location
   private:
     const impl_t* impl{nullptr};
 };
-#define CURRENT_LOC ::xzr::ext::source_location::current()
 #else
 struct source_location
 {
@@ -80,7 +78,6 @@ struct source_location
         res.funcname = func;
         return res;
     }
-#define CURRENT_LOC ::xzr::ext::source_location::current()
 #elif (__has_builtin(__builtin_FILE) && __has_builtin(__builtin_LINE) &&       \
        __has_builtin(__builtin_COLUMN) && __has_builtin(__builtin_FUNCTION))
     [[nodiscard]] static consteval source_location current(
@@ -96,7 +93,6 @@ struct source_location
         res.funcname = func;
         return res;
     }
-#define CURRENT_LOC ::xzr::ext::source_location::current()
 #else
     [[nodiscard]] static consteval source_location current(
         const char* const f,
@@ -117,13 +113,11 @@ struct source_location
         return {};
     }
 #if defined(_MSC_VER) && !defined(__clang__)
-#define CURRENT_LOC                                                            \
     ::xzr::ext::source_location::current(__FILE__, __LINE__, 0, __FUNCSIG__)
 #else
-#define CURRENT_LOC                                                            \
-    ::xzr::ext::source_location::current(__FILE__,                             \
-                                         __LINE__,                             \
-                                         0,                                    \
+    ::xzr::ext::source_location::current(__FILE__,
+                                         __LINE__,
+                                         0,
                                          __PRETTY_FUNCTION__)
 #endif
 #endif

@@ -17,7 +17,7 @@ template <class Exception>
 class [[maybe_unused]] Throw
 {
   public:
-    explicit Throw(source_location srcLoc = CURRENT_LOC)
+    explicit Throw(source_location srcLoc = source_location::current())
         : m_srcLoc{srcLoc}
     {
     }
@@ -50,7 +50,7 @@ class [[maybe_unused]] Throw
     }
 
     std::stringstream m_stream{};
-    source_location m_srcLoc{CURRENT_LOC};
+    source_location m_srcLoc{source_location::current()};
 };
 
 template <class BaseException>
@@ -59,7 +59,8 @@ class Exception : public BaseException
   public:
     using BaseException::BaseException;
 
-    explicit Exception(const char* msg, source_location srcLoc = CURRENT_LOC)
+    explicit Exception(const char* msg,
+                       source_location srcLoc = source_location::current())
         : BaseException{msg}
         , m_srcLoc{srcLoc}
     {
@@ -71,12 +72,12 @@ class Exception : public BaseException
     }
 
   private:
-    source_location m_srcLoc{CURRENT_LOC};
+    source_location m_srcLoc{source_location::current()};
 };
 
 struct message
 {
-    message(std::string s, source_location sl = CURRENT_LOC)
+    message(std::string s, source_location sl = source_location::current())
         : loc{sl}
         , m{std::move(s)}
     {
@@ -93,7 +94,7 @@ struct message
     }
 
     std::string m{};
-    source_location loc{CURRENT_LOC};
+    source_location loc{source_location::current()};
 };
 
 using messages = std::vector<message>;
@@ -151,16 +152,16 @@ struct [[nodiscard]] intent
 
     std::tuple<Args...> tup;
     int except_count{std::uncaught_exceptions()};
-    source_location loc{CURRENT_LOC};
+    source_location loc{source_location::current()};
 };
 
 using Error = Exception<std::runtime_error>;
 
 int a(int i)
 {
-    const auto& in{intent{CURRENT_LOC, "a(", i, ')'}};
+    const auto& in{intent{source_location::current(), "a(", i, ')'}};
     if (i % 2 != 0)
-        Throw<Error>{CURRENT_LOC} << "odd number not allowed";
+        Throw<Error>{source_location::current()} << "odd number not allowed";
     return i;
 }
 
@@ -170,10 +171,19 @@ std::pair<int, std::string> a_range(int min, int max)
     auto msg{""s};
     try
     {
-        const auto& i{intent{CURRENT_LOC, "a_range(", min, ", ", max, ")"}};
+        const auto& i{intent{source_location::current(),
+                             "a_range(",
+                             min,
+                             ", ",
+                             max,
+                             ")"}};
         for (int idx{min}; idx < max; ++idx)
         {
-            const auto& ii{intent{CURRENT_LOC, "accu:", accu, " idx:", idx}};
+            const auto& ii{intent{source_location::current(),
+                                  "accu:",
+                                  accu,
+                                  " idx:",
+                                  idx}};
             accu += a(idx);
         }
     }
@@ -250,14 +260,14 @@ BOOST_FIXTURE_TEST_SUITE(intent_tests, test_intent)
 
 BOOST_AUTO_TEST_CASE(no_intent_on_success)
 {
-    const auto& i{intent{CURRENT_LOC, "start", 0}};
+    const auto& i{intent{source_location::current(), "start", 0}};
     a(0);
     BOOST_TEST(msgs().empty());
 }
 
 BOOST_AUTO_TEST_CASE(intent_on_failure)
 {
-    const auto loc{CURRENT_LOC};
+    const auto loc{source_location::current()};
     try
     {
         const auto& i{intent{loc, "test a(", -1, ')'}};
@@ -283,7 +293,7 @@ BOOST_AUTO_TEST_CASE(intent_copies_lvalue)
 
     try
     {
-        const auto i{intent{CURRENT_LOC, spy}};
+        const auto i{intent{source_location::current(), spy}};
         throw 42;
     }
     catch (...)
@@ -300,7 +310,7 @@ BOOST_AUTO_TEST_CASE(intent_moves_rvalue)
 
     try
     {
-        const auto i{intent{CURRENT_LOC, cm_spy{&calls}}};
+        const auto i{intent{source_location::current(), cm_spy{&calls}}};
         throw 42;
     }
     catch (...)
@@ -316,7 +326,7 @@ BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
     try
     {
         auto a{0};
-        const auto i{intent{CURRENT_LOC, a}};
+        const auto i{intent{source_location::current(), a}};
         ++a;
         throw 42;
     }
@@ -333,7 +343,7 @@ BOOST_AUTO_TEST_CASE(intent_can_take_ref)
     try
     {
         auto a{0};
-        const auto i{intent{CURRENT_LOC, std::cref(a)}};
+        const auto i{intent{source_location::current(), std::cref(a)}};
         ++a;
         throw 42;
     }
