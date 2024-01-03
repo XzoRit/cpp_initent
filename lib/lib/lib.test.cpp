@@ -1,4 +1,5 @@
 #include <lib/source_location.hpp>
+#include <lib/thrw.hpp>
 
 #include <boost/test/unit_test.hpp>
 
@@ -12,41 +13,8 @@ using namespace std::string_literals;
 namespace
 {
 using ::xzr::ext::source_location;
-
-template <class Exception>
-class [[maybe_unused]] Throw
-{
-  public:
-#if defined(DFL_CONFIG_COMPILER_MSVC)
-#pragma warning(push)
-#pragma warning(disable : 4722)
-#endif
-    [[noreturn]] ~Throw() noexcept(false)
-    {
-        throw Exception{m_stream.str().c_str(), m_srcLoc};
-    }
-#if defined(COMPILER_MSVC)
-#pragma warning(pop)
-#endif
-
-  private:
-    template <class FormatStreamable>
-    friend Throw& operator<<(Throw& r, const FormatStreamable& it)
-    {
-        r.m_stream << it;
-        return r;
-    }
-
-    template <class FormatStreamable>
-    friend Throw&& operator<<(Throw&& r, const FormatStreamable& it)
-    {
-        r.m_stream << it;
-        return std::move(r);
-    }
-
-    std::stringstream m_stream{};
-    source_location m_srcLoc{source_location::current()};
-};
+template <class E>
+using thrw = ::xzr::error::thrw<E>;
 
 template <class BaseException>
 class Exception : public BaseException
@@ -156,7 +124,7 @@ int a(int i)
 {
     const auto& in{intent{source_location::current(), "a(", i, ')'}};
     if (i % 2 != 0)
-        Throw<Error>{} << "odd number not allowed";
+        thrw<Error>{} << "odd number not allowed";
     return i;
 }
 

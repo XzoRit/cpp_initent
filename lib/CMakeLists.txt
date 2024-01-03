@@ -11,6 +11,8 @@ target_sources(
   "${SOURCE}/lib.hpp"
   "${SOURCE}/source_location.cpp"
   "${SOURCE}/source_location.hpp"
+  "${SOURCE}/thrw.cpp"
+  "${SOURCE}/thrw.hpp"
 )
 
 target_include_directories(lib PUBLIC ${INCLUDE})
@@ -26,6 +28,7 @@ target_sources(
   PRIVATE
   "${SOURCE}/lib.test.cpp"
   "${SOURCE}/source_location.test.cpp"
+  "${SOURCE}/thrw.test.cpp"
   "${SOURCE}/main.test.cpp"
 )
 
