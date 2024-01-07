@@ -25,7 +25,7 @@ struct source_location
     using builtin_type = decltype(__builtin_source_location());
 
   public:
-    [[nodiscard]] static consteval source_location current(
+    [[nodiscard]] static constexpr source_location current(
         builtin_type slptr = __builtin_source_location()) noexcept
     {
         source_location ret;
@@ -65,7 +65,7 @@ struct source_location
 {
 #if (__has_builtin(__builtin_FILE) && __has_builtin(__builtin_LINE) &&         \
      __has_builtin(__builtin_COLUMN) && __has_builtin(__builtin_FUNCSIG))
-    [[nodiscard]] static consteval source_location current(
+    [[nodiscard]] static constexpr source_location current(
         const char* const f = __builtin_FILE(),
         const std::uint_least32_t l = __builtin_LINE(),
         const std::uint_least32_t c = __builtin_COLUMN(),
@@ -80,7 +80,7 @@ struct source_location
     }
 #elif (__has_builtin(__builtin_FILE) && __has_builtin(__builtin_LINE) &&       \
        __has_builtin(__builtin_COLUMN) && __has_builtin(__builtin_FUNCTION))
-    [[nodiscard]] static consteval source_location current(
+    [[nodiscard]] static constexpr source_location current(
         const char* const f = __builtin_FILE(),
         const std::uint_least32_t l = __builtin_LINE(),
         const std::uint_least32_t c = __builtin_COLUMN(),
@@ -94,7 +94,7 @@ struct source_location
         return res;
     }
 #else
-    [[nodiscard]] static consteval source_location current(
+    [[nodiscard]] static constexpr source_location current(
         const char* const f,
         const std::uint_least32_t l,
         const std::uint_least32_t c,

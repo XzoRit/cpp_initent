@@ -11,6 +11,11 @@ template <class Exception>
 class [[maybe_unused]] thrw
 {
   public:
+    explicit thrw(ext::source_location sl = ext::source_location::current())
+        : m_srcLoc{sl}
+    {
+    }
+
 #if defined(DFL_CONFIG_COMPILER_MSVC)
 #pragma warning(push)
 #pragma warning(disable : 4722)
@@ -39,6 +44,6 @@ class [[maybe_unused]] thrw
     }
 
     std::stringstream m_stream{};
-    ext::source_location m_srcLoc{ext::source_location::current()};
+    ext::source_location m_srcLoc;
 };
 }
