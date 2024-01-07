@@ -7,6 +7,8 @@ add_library(lib)
 target_sources(
   lib
   PRIVATE
+  "${SOURCE}/exception.cpp"
+  "${SOURCE}/exception.hpp"
   "${SOURCE}/lib.cpp"
   "${SOURCE}/lib.hpp"
   "${SOURCE}/source_location.cpp"
@@ -26,6 +28,7 @@ add_executable(lib_test)
 target_sources(
   lib_test
   PRIVATE
+  "${SOURCE}/exception.test.cpp"
   "${SOURCE}/lib.test.cpp"
   "${SOURCE}/source_location.test.cpp"
   "${SOURCE}/thrw.test.cpp"
