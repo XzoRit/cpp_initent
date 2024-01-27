@@ -118,13 +118,13 @@ struct [[nodiscard]] intent
     source_location loc{source_location::current()};
 };
 
-using Error = Exception<std::runtime_error>;
+using Error = std::runtime_error;
 
 int a(int i)
 {
     const auto& in{intent{source_location::current(), "a(", i, ')'}};
     if (i % 2 != 0)
-        thrw<Error>{} << "odd number not allowed";
+        throw Error{"odd number not allowed"};
     return i;
 }
 

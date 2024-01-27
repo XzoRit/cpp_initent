@@ -26,6 +26,7 @@ BOOST_AUTO_TEST_CASE(ctor)
 
     BOOST_TEST(e.what() == "msg");
     BOOST_TEST(e.where().line() == __LINE__ - 3);
+    BOOST_TEST(e.where().file_name() == __FILE__);
     BOOST_TEST(e.data() == 1);
 }
 

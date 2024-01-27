@@ -2,6 +2,7 @@
 
 #include <lib/source_location.hpp>
 
+#include <source_location>
 #include <sstream>
 #include <utility>
 
@@ -10,9 +11,12 @@ namespace xzr::error
 template <class Exception>
 class [[maybe_unused]] thrw
 {
+    std::source_location m_srcLoc = std::source_location::current();
+
   public:
-    explicit thrw(ext::source_location sl = ext::source_location::current())
-        : m_srcLoc{sl}
+    template <class... Args>
+    explicit thrw(Args... args)
+        : m_ex{std::move(args)..., m_srcLoc}
     {
     }
 
@@ -22,7 +26,7 @@ class [[maybe_unused]] thrw
 #endif
     [[noreturn]] ~thrw() noexcept(false)
     {
-        throw Exception{m_stream.str().c_str(), m_srcLoc};
+        throw m_ex;
     }
 #if defined(COMPILER_MSVC)
 #pragma warning(pop)
@@ -43,7 +47,7 @@ class [[maybe_unused]] thrw
         return std::move(r);
     }
 
+    Exception m_ex;
     std::stringstream m_stream{};
-    ext::source_location m_srcLoc;
 };
 }
