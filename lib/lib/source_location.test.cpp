@@ -30,11 +30,23 @@ struct test_source_location
             : m_sl{sl}
         {
         }
+
+        src_loc_ctor(int, source_location sl = source_location::current())
+            : m_sl{sl}
+        {
+        }
+
         source_location m_sl{};
     };
 
     struct src_loc_member
     {
+        src_loc_member() = default;
+
+        src_loc_member(int)
+        {
+        }
+
         source_location m_sl{source_location::current()};
     };
 };
@@ -63,22 +75,44 @@ BOOST_AUTO_TEST_CASE(default_func_param)
 
 BOOST_AUTO_TEST_CASE(default_ctor_param)
 {
-    const auto sl{src_loc_ctor{}.m_sl};
+    {
+        const auto sl{src_loc_ctor{}.m_sl};
 
-    BOOST_TEST(sl.file_name() == __FILE__);
-    BOOST_TEST(sl.line() == __LINE__ - 3);
-    BOOST_TEST(sl.column() != 0);
-    BOOST_TEST(std::string_view{sl.function_name()}.ends_with("test_method()"));
+        BOOST_TEST(sl.file_name() == __FILE__);
+        BOOST_TEST(sl.line() == __LINE__ - 3);
+        BOOST_TEST(sl.column() != 0);
+        BOOST_TEST(
+            std::string_view{sl.function_name()}.ends_with("test_method()"));
+    }
+    {
+        const auto sl{src_loc_ctor{int{}}.m_sl};
+
+        BOOST_TEST(sl.file_name() == __FILE__);
+        BOOST_TEST(sl.line() == __LINE__ - 3);
+        BOOST_TEST(sl.column() != 0);
+        BOOST_TEST(
+            std::string_view{sl.function_name()}.ends_with("test_method()"));
+    }
 }
 
 BOOST_AUTO_TEST_CASE(default_member)
 {
-    const auto sl{src_loc_member{}.m_sl};
+    {
+        const auto sl{src_loc_member{}.m_sl};
 
-    BOOST_TEST(sl.file_name() == __FILE__);
-    BOOST_TEST(sl.line() == __LINE__ - 3);
-    BOOST_TEST(sl.column() != 0);
-    BOOST_TEST(std::string_view{sl.function_name()}.ends_with("test_method()"));
+        BOOST_TEST(sl.file_name() == __FILE__);
+        BOOST_TEST(sl.column() != 0);
+        BOOST_TEST(std::string_view{sl.function_name()}.ends_with(
+            "src_loc_member::src_loc_member()"));
+    }
+    {
+        const auto sl{src_loc_member{int{}}.m_sl};
+
+        BOOST_TEST(sl.file_name() == __FILE__);
+        BOOST_TEST(sl.column() != 0);
+        BOOST_TEST(std::string_view{sl.function_name()}.ends_with(
+            "src_loc_member::src_loc_member(int)"));
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
