@@ -1,3 +1,6 @@
+#include <lib/source_location.hpp>
+#include <lib/thrw.hpp>
+
 #include <boost/test/unit_test.hpp>
 
 #include <future>
@@ -5,122 +8,13 @@
 #include <string>
 #include <vector>
 
-namespace
-{
 using namespace std::string_literals;
 
-struct source_location
+namespace
 {
-    [[nodiscard]] static consteval source_location current(
-#if (__has_builtin(__builtin_FILE))
-        const char* const _File_ = __builtin_FILE(),
-#else
-        const char* const _File_,
-#endif
-#if (__has_builtin(__builtin_LINE))
-        const std::uint_least32_t _Line_ = __builtin_LINE(),
-#else
-        const std::uint_least32_t _Line_,
-#endif
-#if (__has_builtin(__builtin_COLUMN))
-        const std::uint_least32_t _Column_ = __builtin_COLUMN(),
-#else
-        const std::uint_least32_t _Column_ = 0,
-#endif
-#if (__has_builtin(__builtin_FUNCSIG))
-        const char* const _Function_ = __builtin_FUNCSIG()
-#elif (__has_builtin(__builtin_FUNCTION))
-        const char* const _Function_ = __builtin_FUNCTION()
-#else
-        const char* const _Function_ = ""
-#endif
-            ) noexcept
-    {
-        source_location _Result{};
-        _Result._Line = _Line_;
-        _Result._Column = _Column_;
-        _Result._File = _File_;
-        _Result._Function = _Function_;
-        return _Result;
-    }
-
-    [[nodiscard]] constexpr source_location() noexcept = default;
-
-    [[nodiscard]] constexpr std::uint_least32_t line() const noexcept
-    {
-        return _Line;
-    }
-
-    [[nodiscard]] constexpr std::uint_least32_t column() const noexcept
-    {
-        return _Column;
-    }
-
-    [[nodiscard]] constexpr const char* file_name() const noexcept
-    {
-        return _File;
-    }
-
-    [[nodiscard]] constexpr const char* function_name() const noexcept
-    {
-        return _Function;
-    }
-
-  private:
-    std::uint_least32_t _Line{};
-    std::uint_least32_t _Column{};
-    const char* _File = "unknown_file";
-    const char* _Function = "unknown_func";
-};
-
-#define CURRENT_LOC source_location::current(__FILE__, __LINE__, 0, __func__)
-
-std::ostream& operator<<(std::ostream& s, const source_location& l)
-{
-    s << l.file_name() << ':' << l.line() << ':' << l.column() << ':'
-      << l.function_name() << ':';
-    return s;
-}
-
-template <class Exception>
-class [[maybe_unused]] Throw
-{
-  public:
-    explicit Throw(source_location srcLoc = source_location::current())
-        : m_srcLoc{srcLoc}
-    {
-    }
-
-#if defined(DFL_CONFIG_COMPILER_MSVC)
-#pragma warning(push)
-#pragma warning(disable : 4722)
-#endif
-    [[noreturn]] ~Throw() noexcept(false)
-    {
-        throw Exception{m_stream.str().c_str(), m_srcLoc};
-    }
-#if defined(COMPILER_MSVC)
-#pragma warning(pop)
-#endif
-
-  private:
-    template <class FormatStreamable>
-    friend Throw& operator<<(Throw& r, const FormatStreamable& it)
-    {
-        r.m_stream << it;
-        return r;
-    }
-
-    template <class FormatStreamable>
-    friend Throw&& operator<<(Throw&& r, const FormatStreamable& it)
-    {
-        r.m_stream << it;
-        return std::move(r);
-    }
-
-    std::stringstream m_stream{};
-    source_location m_srcLoc{source_location::current()};
-};
+using ::xzr::ext::source_location;
+template <class E>
+using thrw = ::xzr::error::thrw<E>;
 
 template <class BaseException>
 class Exception : public BaseException
@@ -224,13 +118,13 @@ struct [[nodiscard]] intent
     source_location loc{source_location::current()};
 };
 
-using Error = Exception<std::runtime_error>;
+using Error = std::runtime_error;
 
 int a(int i)
 {
-    const auto& in{intent{CURRENT_LOC, "a(", i, ')'}};
+    const auto& in{intent{source_location::current(), "a(", i, ')'}};
     if (i % 2 != 0)
-        Throw<Error>{CURRENT_LOC} << "odd number not allowed";
+        throw Error{"odd number not allowed"};
     return i;
 }
 
@@ -240,10 +134,19 @@ std::pair<int, std::string> a_range(int min, int max)
     auto msg{""s};
     try
     {
-        const auto& i{intent{CURRENT_LOC, "a_range(", min, ", ", max, ")"}};
+        const auto& i{intent{source_location::current(),
+                             "a_range(",
+                             min,
+                             ", ",
+                             max,
+                             ")"}};
         for (int idx{min}; idx < max; ++idx)
         {
-            const auto& ii{intent{CURRENT_LOC, "accu:", accu, " idx:", idx}};
+            const auto& ii{intent{source_location::current(),
+                                  "accu:",
+                                  accu,
+                                  " idx:",
+                                  idx}};
             accu += a(idx);
         }
     }
@@ -320,14 +223,14 @@ BOOST_FIXTURE_TEST_SUITE(intent_tests, test_intent)
 
 BOOST_AUTO_TEST_CASE(no_intent_on_success)
 {
-    const auto& i{intent{CURRENT_LOC, "start", 0}};
+    const auto& i{intent{source_location::current(), "start", 0}};
     a(0);
     BOOST_TEST(msgs().empty());
 }
 
 BOOST_AUTO_TEST_CASE(intent_on_failure)
 {
-    const auto loc{CURRENT_LOC};
+    const auto loc{source_location::current()};
     try
     {
         const auto& i{intent{loc, "test a(", -1, ')'}};
@@ -353,7 +256,7 @@ BOOST_AUTO_TEST_CASE(intent_copies_lvalue)
 
     try
     {
-        const auto i{intent{CURRENT_LOC, spy}};
+        const auto i{intent{source_location::current(), spy}};
         throw 42;
     }
     catch (...)
@@ -370,7 +273,7 @@ BOOST_AUTO_TEST_CASE(intent_moves_rvalue)
 
     try
     {
-        const auto i{intent{CURRENT_LOC, cm_spy{&calls}}};
+        const auto i{intent{source_location::current(), cm_spy{&calls}}};
         throw 42;
     }
     catch (...)
@@ -386,7 +289,7 @@ BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
     try
     {
         auto a{0};
-        const auto i{intent{CURRENT_LOC, a}};
+        const auto i{intent{source_location::current(), a}};
         ++a;
         throw 42;
     }
@@ -403,7 +306,7 @@ BOOST_AUTO_TEST_CASE(intent_can_take_ref)
     try
     {
         auto a{0};
-        const auto i{intent{CURRENT_LOC, std::cref(a)}};
+        const auto i{intent{source_location::current(), std::cref(a)}};
         ++a;
         throw 42;
     }
