@@ -105,6 +105,13 @@
       "inherits": [
         "base"
       ]
+    },
+    {
+      "name": "msvc_ninja",
+      "inherits": [
+        "base",
+        "ninja"
+      ]
     }
   ],
   "buildPresets": [
