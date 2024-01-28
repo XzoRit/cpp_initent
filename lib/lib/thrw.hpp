@@ -2,7 +2,6 @@
 
 #include <lib/source_location.hpp>
 
-#include <source_location>
 #include <sstream>
 #include <utility>
 
@@ -11,24 +10,26 @@ namespace xzr::error
 template <class Exception>
 class [[maybe_unused]] thrw
 {
-    std::source_location m_srcLoc = std::source_location::current();
+  private:
+    using source_location = ::xzr::ext::source_location;
 
   public:
     template <class... Args>
-    explicit thrw(Args... args)
-        : m_ex{std::move(args)..., m_srcLoc}
+    explicit thrw(source_location sl, Args... args)
+        : m_ex{std::move(args)..., sl}
     {
     }
 
-#if defined(DFL_CONFIG_COMPILER_MSVC)
+#if defined(_MSVC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4722)
 #endif
     [[noreturn]] ~thrw() noexcept(false)
     {
+        m_ex.str().append(m_stream.str());
         throw m_ex;
     }
-#if defined(COMPILER_MSVC)
+#if defined(_MSVC_VER)
 #pragma warning(pop)
 #endif
 
@@ -47,7 +48,27 @@ class [[maybe_unused]] thrw
         return std::move(r);
     }
 
-    Exception m_ex;
+    source_location m_srcLoc{};
     std::stringstream m_stream{};
+    Exception m_ex;
 };
+
+template <class E>
+struct collect
+{
+    template <class... Args>
+    auto operator()(Args... args)
+    {
+        return thrw<E>{m_sl, args...};
+    }
+
+    ::xzr::ext::source_location m_sl{};
+};
+
+template <class E>
+auto throw_it(
+    ::xzr::ext::source_location sl = ::xzr::ext::source_location::current())
+{
+    return collect<E>{sl};
+}
 }

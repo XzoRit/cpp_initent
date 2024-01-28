@@ -31,6 +31,11 @@ class exception_str : public std::exception
         return m_msg;
     }
 
+    std::string& str()
+    {
+        return m_msg;
+    }
+
     source_location where() const
     {
         return m_sl;

@@ -1,17 +1,15 @@
-#include "lib/source_location.hpp"
 #include <lib/exception.hpp>
 #include <lib/thrw.hpp>
 
 #include <boost/test/unit_test.hpp>
 
-#include <stdexcept>
-
 namespace
 {
+using ::xzr::error::throw_it;
+
 struct test_thrw
 {
     using E = ::xzr::error::exception<int>;
-    using Thrw = ::xzr::error::thrw<E>;
 
     test_thrw()
     {
@@ -24,15 +22,20 @@ struct test_thrw
 
 BOOST_FIXTURE_TEST_SUITE(thrw_tests, test_thrw)
 
-BOOST_AUTO_TEST_CASE(throw_catch)
+BOOST_AUTO_TEST_CASE(throw_catch_with_data)
 {
 
     try
     {
-        Thrw{"msg", 1} << " - ext msg";
+        throw_it<E>()("msg", 1) << " extra msg " << 2;
     }
     catch (const E& e)
     {
+        BOOST_TEST(e.where().line() == __LINE__ - 4);
+        BOOST_TEST(e.where().file_name() == __FILE__);
+        BOOST_TEST(e.where().function_name() == __func__);
+        BOOST_TEST(e.what() == "msg extra msg 2");
+        BOOST_TEST(e.str() == "msg extra msg 2");
         BOOST_TEST(e.data() == 1);
     }
 }
