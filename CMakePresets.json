@@ -156,6 +156,16 @@
       "name": "msvcd",
       "configurePreset": "msvc",
       "configuration": "Debug"
+    },
+    {
+      "name": "msvc_ninja",
+      "configurePreset": "msvc_ninja",
+      "configuration": "Release"
+    },
+    {
+      "name": "msvc_ninjad",
+      "configurePreset": "msvc_ninja",
+      "configuration": "Debug"
     }
   ],
   "testPresets": [
@@ -237,6 +247,14 @@
         "base"
       ],
       "configuration": "Debug"
+    },
+    {
+      "name": "msvc_ninja",
+      "configurePreset": "msvc_ninja",
+      "inherits": [
+        "base"
+      ],
+      "configuration": "Release"
     }
   ],
   "workflowPresets": [
@@ -271,6 +289,23 @@
         {
           "type": "test",
           "name": "msvcd"
+        }
+      ]
+    },
+    {
+      "name": "msvc_ninja",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "msvc_ninja"
+        },
+        {
+          "type": "build",
+          "name": "msvc_ninja"
+        },
+        {
+          "type": "test",
+          "name": "msvc_ninja"
         }
       ]
     },
