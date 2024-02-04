@@ -20,7 +20,7 @@ class [[maybe_unused]] thrw
     {
     }
 
-#if defined(_MSVC_VER)
+#if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable : 4722)
 #endif
@@ -29,7 +29,7 @@ class [[maybe_unused]] thrw
         m_ex.str().append(m_stream.str());
         throw m_ex;
     }
-#if defined(_MSVC_VER)
+#if defined(_MSC_VER)
 #pragma warning(pop)
 #endif
 
