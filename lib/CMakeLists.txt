@@ -13,8 +13,8 @@ target_sources(
   "${SOURCE}/lib.hpp"
   "${SOURCE}/source_location.cpp"
   "${SOURCE}/source_location.hpp"
-  "${SOURCE}/thrw.cpp"
-  "${SOURCE}/thrw.hpp"
+  "${SOURCE}/raise.cpp"
+  "${SOURCE}/raise.hpp"
 )
 
 target_include_directories(lib PUBLIC ${INCLUDE})
@@ -31,7 +31,7 @@ target_sources(
   "${SOURCE}/exception.test.cpp"
   "${SOURCE}/lib.test.cpp"
   "${SOURCE}/source_location.test.cpp"
-  "${SOURCE}/thrw.test.cpp"
+  "${SOURCE}/raise.test.cpp"
   "${SOURCE}/main.test.cpp"
 )
 
