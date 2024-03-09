@@ -8,14 +8,14 @@
 
 namespace xzr::error
 {
-class exception_str : public std::exception
+class exception : public std::exception
 {
   private:
     using source_location = ::xzr::ext::source_location;
 
   public:
-    explicit exception_str(std::string msg,
-                           source_location sl = source_location::current())
+    explicit exception(std::string msg,
+                       source_location sl = source_location::current())
         : m_msg{std::move(msg)}
         , m_sl{sl}
     {
@@ -31,11 +31,6 @@ class exception_str : public std::exception
         return m_msg;
     }
 
-    std::string& str()
-    {
-        return m_msg;
-    }
-
     source_location where() const
     {
         return m_sl;
@@ -47,16 +42,16 @@ class exception_str : public std::exception
 };
 
 template <class Data>
-class exception : public exception_str
+class basic_exception : public exception
 {
   private:
     using source_location = ::xzr::ext::source_location;
 
   public:
-    explicit exception(std::string msg,
-                       Data d,
-                       source_location sl = source_location::current())
-        : exception_str{std::move(msg), sl}
+    explicit basic_exception(std::string msg,
+                             Data d,
+                             source_location sl = source_location::current())
+        : exception{std::move(msg), sl}
         , m_data{std::move(d)}
     {
     }

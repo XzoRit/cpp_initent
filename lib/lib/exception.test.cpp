@@ -10,7 +10,7 @@ namespace
 {
 struct test_exception
 {
-    using E = ::xzr::error::exception<int>;
+    using E = ::xzr::error::basic_exception<int>;
 
     test_exception()
     {
