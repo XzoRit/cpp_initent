@@ -9,8 +9,8 @@ target_sources(
   PRIVATE
   "${SOURCE}/exception.cpp"
   "${SOURCE}/exception.hpp"
-  "${SOURCE}/lib.cpp"
-  "${SOURCE}/lib.hpp"
+  "${SOURCE}/intent.cpp"
+  "${SOURCE}/intent.hpp"
   "${SOURCE}/source_location.cpp"
   "${SOURCE}/source_location.hpp"
   "${SOURCE}/raise.cpp"
@@ -29,7 +29,7 @@ target_sources(
   lib_test
   PRIVATE
   "${SOURCE}/exception.test.cpp"
-  "${SOURCE}/lib.test.cpp"
+  "${SOURCE}/intent.test.cpp"
   "${SOURCE}/source_location.test.cpp"
   "${SOURCE}/raise.test.cpp"
   "${SOURCE}/main.test.cpp"
