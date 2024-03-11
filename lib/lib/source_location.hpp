@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <ostream>
 
 namespace xzr::ext
 {
@@ -53,6 +52,4 @@ struct source_location
     const char* fil = "unknown_file";
     const char* funcname = "unknown_func";
 };
-
-std::ostream& operator<<(std::ostream& s, const source_location& l);
 }
