@@ -14,7 +14,7 @@ struct message
 {
     using source_location = ::xzr::ext::source_location;
 
-    message(std::string s, source_location sl = source_location::current())
+    message(source_location sl, std::string s)
         : loc{sl}
         , m{std::move(s)}
     {
@@ -75,7 +75,7 @@ struct [[nodiscard]] intent_t
         {
             msgs().push_back(std::apply(
                 [this](const auto&... args) {
-                    return message{msg_from_ostringstream(args...), loc};
+                    return message{loc, msg_from_ostringstream(args...)};
                 },
                 tup));
         }

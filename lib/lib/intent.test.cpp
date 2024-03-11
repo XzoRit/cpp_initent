@@ -33,19 +33,10 @@ std::pair<int, std::string> a_range(int min, int max)
     auto msg{""s};
     try
     {
-        const auto& _a{intent().capture(source_location::current(),
-                                        "a_range(",
-                                        min,
-                                        ", ",
-                                        max,
-                                        ")")};
+        const auto& _a{intent().capture("a_range(", min, ", ", max, ")")};
         for (int idx{min}; idx < max; ++idx)
         {
-            const auto& _b{intent().capture(source_location::current(),
-                                            "accu:",
-                                            accu,
-                                            " idx:",
-                                            idx)};
+            const auto& _b{intent().capture("accu:", accu, " idx:", idx)};
             accu += a(idx);
         }
     }
@@ -122,7 +113,7 @@ BOOST_FIXTURE_TEST_SUITE(intent_tests, test_intent)
 
 BOOST_AUTO_TEST_CASE(no_intent_on_success)
 {
-    const auto& i{intent().capture(source_location::current(), "start", 0)};
+    const auto& i{intent().capture("start", 0)};
     a(0);
     BOOST_TEST(msgs().empty());
 }
@@ -140,7 +131,12 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
     }
     BOOST_REQUIRE(!msgs().empty());
     BOOST_REQUIRE(msgs().size() == 2);
+
     BOOST_TEST(msgs()[0].msg() == "a(-1)");
+    BOOST_TEST(msgs()[0].location().file_name() == loc.file_name());
+    BOOST_TEST(msgs()[0].location().line() == 24);
+    BOOST_TEST(msgs()[0].location().function_name() == "a");
+
     BOOST_TEST(msgs()[1].msg() == "test a(-1)");
     BOOST_TEST(msgs()[1].location().file_name() == loc.file_name());
     BOOST_TEST(msgs()[1].location().line() == loc.line() + 3);
@@ -204,8 +200,7 @@ BOOST_AUTO_TEST_CASE(intent_can_take_ref)
     try
     {
         auto a{0};
-        const auto i{
-            intent().capture(source_location::current(), std::cref(a))};
+        const auto i{intent().capture(std::cref(a))};
         ++a;
         throw 42;
     }
