@@ -17,7 +17,7 @@ void flush_intention_stack()
     for (const auto& m : ::xzr::error::msgs())
     {
         std::format_to(std::ostreambuf_iterator<char>{std::cout},
-                       "{:LFfC}:{}\n",
+                       "{0:F}:{0:L}:{0:C}:{0:f}:{1}\n",
                        m.location(),
                        m.msg());
     }

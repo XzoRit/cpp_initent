@@ -103,5 +103,19 @@ BOOST_AUTO_TEST_CASE(default_member)
     }
 }
 
+BOOST_AUTO_TEST_CASE(std_format)
+{
+    const auto sl{source_location::current()};
+
+    BOOST_TEST(std::format("{:F}", sl) == sl.file_name());
+    BOOST_TEST(std::format("{:L}", sl) == std::to_string(sl.line()));
+    BOOST_TEST(std::format("{:C}", sl) == std::to_string(sl.column()));
+    BOOST_TEST(std::format("{:f}", sl) == sl.function_name());
+
+    BOOST_TEST(std::format("{0:F}{0:L}{0:C}{0:f}", sl) ==
+               std::string{sl.file_name()} + std::to_string(sl.line()) +
+                   std::to_string(sl.column()) + sl.function_name());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 }
