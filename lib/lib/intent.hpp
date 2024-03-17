@@ -10,11 +10,11 @@
 
 namespace xzr::error
 {
-struct message
+struct intention_stack_entry
 {
     using source_location = ::xzr::ext::source_location;
 
-    message(source_location sl, std::string s)
+    intention_stack_entry(source_location sl, std::string s)
         : loc{sl}
         , m{std::move(s)}
     {
@@ -25,7 +25,7 @@ struct message
         return m;
     }
 
-    [[nodiscard]] source_location location() const
+    [[nodiscard]] source_location where() const
     {
         return loc;
     }
@@ -34,11 +34,11 @@ struct message
     source_location loc{source_location::current()};
 };
 
-using messages = std::vector<message>;
+using intentions = std::vector<intention_stack_entry>;
 
-inline messages& msgs()
+inline intentions& intention_stack()
 {
-    thread_local static messages ms{};
+    thread_local static intentions ms{};
     return ms;
 }
 
@@ -73,9 +73,11 @@ struct [[nodiscard]] intent_t
             return;
         try
         {
-            msgs().push_back(std::apply(
+            intention_stack().push_back(std::apply(
                 [this](const auto&... args) {
-                    return message{loc, msg_from_ostringstream(args...)};
+                    return intention_stack_entry{
+                        loc,
+                        msg_from_ostringstream(args...)};
                 },
                 tup));
         }

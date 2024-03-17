@@ -14,7 +14,7 @@ using namespace std::string_literals;
 namespace
 {
 using ::xzr::error::intent;
-using ::xzr::error::msgs;
+using ::xzr::error::intention_stack;
 using ::xzr::ext::source_location;
 
 using Error = std::runtime_error;
@@ -42,14 +42,14 @@ std::pair<int, std::string> a_range(int min, int max)
     }
     catch (...)
     {
-        msg += std::accumulate(msgs().cbegin(),
-                               msgs().cend(),
+        msg += std::accumulate(intention_stack().cbegin(),
+                               intention_stack().cend(),
                                ""s,
                                [](auto accu, const auto& m) {
                                    accu += m.msg() + '\n';
                                    return accu;
                                });
-        msgs().clear();
+        intention_stack().clear();
     }
     return {accu, msg};
 }
@@ -100,12 +100,12 @@ struct test_intent
 {
     test_intent()
     {
-        msgs().clear();
+        intention_stack().clear();
     }
 
     ~test_intent()
     {
-        msgs().clear();
+        intention_stack().clear();
     }
 };
 
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(no_intent_on_success)
 {
     const auto& i{intent().capture("start", 0)};
     a(0);
-    BOOST_TEST(msgs().empty());
+    BOOST_TEST(intention_stack().empty());
 }
 
 BOOST_AUTO_TEST_CASE(intent_on_failure)
@@ -129,18 +129,19 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
     catch (...)
     {
     }
-    BOOST_REQUIRE(!msgs().empty());
-    BOOST_REQUIRE(msgs().size() == 2);
+    BOOST_REQUIRE(!intention_stack().empty());
+    BOOST_REQUIRE(intention_stack().size() == 2);
 
-    BOOST_TEST(msgs()[0].msg() == "a(-1)");
-    BOOST_TEST(msgs()[0].location().file_name() == loc.file_name());
-    BOOST_TEST(msgs()[0].location().line() == 24);
-    BOOST_TEST(msgs()[0].location().function_name() == "a");
+    BOOST_TEST(intention_stack()[0].msg() == "a(-1)");
+    BOOST_TEST(intention_stack()[0].where().file_name() == loc.file_name());
+    BOOST_TEST(intention_stack()[0].where().line() == 24);
+    BOOST_TEST(intention_stack()[0].where().function_name() == "a");
 
-    BOOST_TEST(msgs()[1].msg() == "test a(-1)");
-    BOOST_TEST(msgs()[1].location().file_name() == loc.file_name());
-    BOOST_TEST(msgs()[1].location().line() == loc.line() + 3);
-    BOOST_TEST(msgs()[1].location().function_name() == loc.function_name());
+    BOOST_TEST(intention_stack()[1].msg() == "test a(-1)");
+    BOOST_TEST(intention_stack()[1].where().file_name() == loc.file_name());
+    BOOST_TEST(intention_stack()[1].where().line() == loc.line() + 3);
+    BOOST_TEST(intention_stack()[1].where().function_name() ==
+               loc.function_name());
 }
 
 BOOST_AUTO_TEST_CASE(intent_copies_lvalue)
@@ -158,7 +159,7 @@ BOOST_AUTO_TEST_CASE(intent_copies_lvalue)
     }
 
     BOOST_TEST(calls == "ccmc");
-    BOOST_TEST(!msgs().empty());
+    BOOST_TEST(!intention_stack().empty());
 }
 
 BOOST_AUTO_TEST_CASE(intent_moves_rvalue)
@@ -175,7 +176,7 @@ BOOST_AUTO_TEST_CASE(intent_moves_rvalue)
     }
 
     BOOST_TEST(calls == "mcmc");
-    BOOST_TEST(!msgs().empty());
+    BOOST_TEST(!intention_stack().empty());
 }
 
 BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
@@ -191,8 +192,8 @@ BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
     {
     }
 
-    BOOST_REQUIRE(msgs().size() == 1);
-    BOOST_TEST(msgs()[0].msg() == "0");
+    BOOST_REQUIRE(intention_stack().size() == 1);
+    BOOST_TEST(intention_stack()[0].msg() == "0");
 }
 
 BOOST_AUTO_TEST_CASE(intent_can_take_ref)
@@ -208,8 +209,8 @@ BOOST_AUTO_TEST_CASE(intent_can_take_ref)
     {
     }
 
-    BOOST_REQUIRE(msgs().size() == 1);
-    BOOST_TEST(msgs()[0].msg() == "1");
+    BOOST_REQUIRE(intention_stack().size() == 1);
+    BOOST_TEST(intention_stack()[0].msg() == "1");
 }
 
 BOOST_AUTO_TEST_CASE(intent_from_a_range)

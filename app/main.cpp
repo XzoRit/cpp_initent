@@ -14,14 +14,14 @@ namespace po = boost::program_options;
 
 void flush_intention_stack()
 {
-    for (const auto& m : ::xzr::error::msgs())
+    for (const auto& m : ::xzr::error::intention_stack())
     {
         std::format_to(std::ostreambuf_iterator<char>{std::cout},
                        "{0:F}:{0:L}:{0:C}:{0:f}:{1}\n",
-                       m.location(),
+                       m.where(),
                        m.msg());
     }
-    ::xzr::error::msgs().clear();
+    ::xzr::error::intention_stack().clear();
 }
 
 int rand()
