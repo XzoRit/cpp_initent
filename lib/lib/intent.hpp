@@ -102,9 +102,56 @@ struct capture_t
     using source_location = ::xzr::ext::source_location;
     source_location m_sl{};
 };
+
 inline auto intent(
     ::xzr::ext::source_location sl = ::xzr::ext::source_location::current())
 {
     return capture_t{sl};
+}
+
+struct format_func_t
+{
+    using source_location = ::xzr::ext::source_location;
+
+    template <class ExitFunc>
+    struct push_intent_on_fail
+    {
+        push_intent_on_fail(ExitFunc ef, source_location sl)
+            : m_ef{std::move(ef)}
+            , m_sl{sl}
+        {
+        }
+
+        ~push_intent_on_fail()
+        {
+            if (std::uncaught_exceptions() <= except_count)
+                return;
+            try
+            {
+                intention_stack().push_back({m_sl, m_ef()});
+            }
+            catch (...)
+            {
+            }
+        }
+
+        int except_count{std::uncaught_exceptions()};
+        ExitFunc m_ef;
+        source_location m_sl;
+    };
+
+    template <class Func>
+    auto on_fail_msg(Func&& func) const&&
+    {
+        return push_intent_on_fail{std::forward<Func>(func), m_sl};
+    }
+
+    source_location m_sl{};
+};
+
+inline auto intent_f(
+    ::xzr::ext::source_location sl = ::xzr::ext::source_location::current())
+{
+    return format_func_t{sl};
 }
 }

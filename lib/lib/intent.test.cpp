@@ -14,6 +14,7 @@ using namespace std::string_literals;
 namespace
 {
 using ::xzr::error::intent;
+using ::xzr::error::intent_f;
 using ::xzr::error::intention_stack;
 using ::xzr::ext::source_location;
 
@@ -134,7 +135,7 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
 
     BOOST_TEST(intention_stack()[0].msg() == "a(-1)");
     BOOST_TEST(intention_stack()[0].where().file_name() == loc.file_name());
-    BOOST_TEST(intention_stack()[0].where().line() == 24);
+    BOOST_TEST(intention_stack()[0].where().line() == 25);
     BOOST_TEST(intention_stack()[0].where().function_name() == "a");
 
     BOOST_TEST(intention_stack()[1].msg() == "test a(-1)");
@@ -248,6 +249,24 @@ BOOST_AUTO_TEST_CASE(intent_from_multiple_threads)
     }
 
     BOOST_TEST(!msg.empty());
+}
+
+BOOST_AUTO_TEST_CASE(intent_with_lambda_capture)
+{
+    auto calls{""s};
+    auto spy{cm_spy{&calls}};
+
+    try
+    {
+        const auto i{intent_f().on_fail_msg([&]() { return *spy.calls; })};
+        throw 42;
+    }
+    catch (...)
+    {
+    }
+
+    BOOST_TEST(!intention_stack().empty());
+    BOOST_TEST(intention_stack()[0].msg() == "");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
