@@ -1,20 +1,29 @@
-constant sources
-    : [ glob *.cpp ]
+import testing
     ;
 
-exe exe
-    : $(sources)
+exe app_exe
+    : main.cpp
       /lib//lib_lib
       /site-config//boost_program_options
     ;
 
-import testing
-    ;
-
-unit-test run
-    : exe
+unit-test run_app
+    : app_exe
     : <testing.arg>"--help"
     ;
 
-always run
+always run_app
     ;
+
+exe bench_exe
+    : bench.cpp
+      /lib//lib_lib
+    ;
+
+unit-test run_bench
+    : bench_exe
+    ;
+
+always run_bench
+    ;
+
