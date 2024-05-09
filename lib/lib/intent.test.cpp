@@ -65,26 +65,26 @@ struct cm_spy
     cm_spy(const cm_spy& a)
         : calls{a.calls}
     {
-        *calls += "cc";
+        *calls += "_copy_";
     }
 
-    cm_spy(cm_spy&& a)
+    cm_spy(cm_spy&& a) noexcept
         : calls{a.calls}
     {
-        *calls += "mc";
+        *calls += "_move_";
     }
 
     cm_spy& operator=(const cm_spy& a)
     {
         calls = a.calls;
-        *calls += "ca";
+        *calls += "_copy=_";
         return *this;
     }
 
-    cm_spy& operator=(cm_spy&& a)
+    cm_spy& operator=(cm_spy&& a) noexcept
     {
         calls = a.calls;
-        *calls += "ma";
+        *calls += "_move=_";
         return *this;
     }
 
@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
 
     BOOST_TEST(intention_stack()[0].msg() == "a(-1)");
     BOOST_TEST(intention_stack()[0].where().file_name() == loc.file_name());
-    BOOST_TEST(intention_stack()[0].where().line() == 25);
+    BOOST_TEST(intention_stack()[0].where().line() == 25u);
     BOOST_TEST(intention_stack()[0].where().function_name() == "a");
 
     BOOST_TEST(intention_stack()[1].msg() == "test a(-1)");
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(intent_copies_lvalue)
     {
     }
 
-    BOOST_TEST(calls == "ccmc");
+    BOOST_TEST(calls == "_copy__move_");
     BOOST_TEST(!intention_stack().empty());
 }
 
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(intent_moves_rvalue)
     {
     }
 
-    BOOST_TEST(calls == "mcmc");
+    BOOST_TEST(calls == "_move__move_");
     BOOST_TEST(!intention_stack().empty());
 }
 

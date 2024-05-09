@@ -30,8 +30,8 @@ struct intention_stack_entry
         return loc;
     }
 
-    std::string m{};
     source_location loc{source_location::current()};
+    std::string m{};
 };
 
 using intentions = std::vector<intention_stack_entry>;
