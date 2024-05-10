@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
     BOOST_REQUIRE(!intention_stack().empty());
     BOOST_REQUIRE_EQUAL(intention_stack().size(), 2);
 
-    BOOST_TEST(intention_stack()[0].msg() == "check if number is odd-1");
+    BOOST_TEST(intention_stack()[0].msg() == "check if number is odd -1");
     BOOST_TEST(intention_stack()[0].where().file_name() == loc.file_name());
     BOOST_TEST(intention_stack()[0].where().line() == 25u);
     BOOST_TEST(intention_stack()[0].where().function_name() == "a");
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
     }
 
     BOOST_REQUIRE(intention_stack().size() == 1);
-    BOOST_TEST(intention_stack()[0].msg() == "intent takes snapshot0");
+    BOOST_TEST(intention_stack()[0].msg() == "intent takes snapshot 0");
 }
 
 BOOST_AUTO_TEST_CASE(intent_can_take_ref)
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(intent_can_take_ref)
     }
 
     BOOST_REQUIRE(intention_stack().size() == 1);
-    BOOST_TEST(intention_stack()[0].msg() == "intent can take references1");
+    BOOST_TEST(intention_stack()[0].msg() == "intent can take references 1");
 }
 
 BOOST_AUTO_TEST_CASE(intent_from_a_range)
@@ -224,9 +224,9 @@ BOOST_AUTO_TEST_CASE(intent_from_a_range)
     }
     {
         const auto& a{a_range(-1, 0)};
-        BOOST_TEST(a.second == "check if number is odd-1\n"
-                               "partial sum0-1\n"
-                               "sum number from min to max-10\n");
+        BOOST_TEST(a.second == "check if number is odd -1\n"
+                               "partial sum 0 -1\n"
+                               "sum number from min to max -1 0\n");
     }
 }
 

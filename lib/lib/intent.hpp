@@ -42,10 +42,17 @@ inline intentions& intention_stack()
     return ms;
 }
 
-template <class Stream, class... A>
-inline Stream& stream_args_into(Stream& str, const A&... args)
+template <class Stream, class A>
+inline void stream_arg_into(Stream& str, const A& arg)
 {
-    (str << ... << args);
+    str << arg;
+}
+
+template <class Stream, class A, class... Args>
+inline Stream& stream_args_into(Stream& str, const A& arg, const Args&... args)
+{
+    stream_arg_into(str, arg);
+    ([&] { str << ' ' << args; }(), ...);
     return str;
 }
 
