@@ -93,14 +93,16 @@ struct [[nodiscard]] intent_t
 
 struct capture_t
 {
+    auto capture() const&& = delete;
+
     template <class... Args>
     auto capture(Args&&... args) const&&
     {
-        return intent_t{m_sl, std::forward<Args>(args)...};
+        return intent_t{sl, std::forward<Args>(args)...};
     }
 
     using source_location = ::xzr::ext::source_location;
-    source_location m_sl{};
+    source_location sl{};
 };
 
 inline auto intent(
