@@ -35,7 +35,8 @@ int rand()
 
 void odd(int a)
 {
-    const auto _{::xzr::error::intent().capture("check if ", a, " is odd")};
+    const auto _{
+        ::xzr::error::intent().capture("check if parameter is odd", a)};
     if (a % 2)
         xzr::error::raise<std::runtime_error>()
             << "odd (" << a << ") not allowed";
@@ -43,7 +44,8 @@ void odd(int a)
 
 void negativ(int a)
 {
-    const auto _{::xzr::error::intent().capture("check if ", a, " is negativ")};
+    const auto _{
+        ::xzr::error::intent().capture("check if parameter is negative", a)};
     if (a < 0)
         xzr::error::raise<std::runtime_error>()
             << "negativ (" << a << ") not allowed";

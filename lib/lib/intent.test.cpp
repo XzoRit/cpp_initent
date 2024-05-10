@@ -22,7 +22,7 @@ using Error = std::runtime_error;
 
 int a(int i)
 {
-    const auto& _{intent().capture("a(", i, ')')};
+    const auto& _{intent().capture("check if number is odd", i)};
     if (i % 2 != 0)
         throw Error{"odd number not allowed"};
     return i;
@@ -34,10 +34,11 @@ std::pair<int, std::string> a_range(int min, int max)
     auto msg{""s};
     try
     {
-        const auto& _a{intent().capture("a_range(", min, ", ", max, ")")};
+        const auto& _a{
+            intent().capture("sum number from min to max", min, max)};
         for (int idx{min}; idx < max; ++idx)
         {
-            const auto& _b{intent().capture("accu:", accu, " idx:", idx)};
+            const auto& _b{intent().capture("partial sum", accu, idx)};
             accu += a(idx);
         }
     }
@@ -114,7 +115,7 @@ BOOST_FIXTURE_TEST_SUITE(intent_tests, test_intent)
 
 BOOST_AUTO_TEST_CASE(no_intent_on_success)
 {
-    const auto& i{intent().capture("start", 0)};
+    const auto& i{intent().capture("no intent on success")};
     a(0);
     BOOST_TEST(intention_stack().empty());
 }
@@ -124,21 +125,21 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
     const auto loc{source_location::current()};
     try
     {
-        const auto& i{intent().capture("test a(", -1, ')')};
+        const auto& i{intent().capture("intent on failure")};
         a(-1);
     }
     catch (...)
     {
     }
     BOOST_REQUIRE(!intention_stack().empty());
-    BOOST_REQUIRE(intention_stack().size() == 2);
+    BOOST_REQUIRE_EQUAL(intention_stack().size(), 2);
 
-    BOOST_TEST(intention_stack()[0].msg() == "a(-1)");
+    BOOST_TEST(intention_stack()[0].msg() == "check if number is odd-1");
     BOOST_TEST(intention_stack()[0].where().file_name() == loc.file_name());
     BOOST_TEST(intention_stack()[0].where().line() == 25u);
     BOOST_TEST(intention_stack()[0].where().function_name() == "a");
 
-    BOOST_TEST(intention_stack()[1].msg() == "test a(-1)");
+    BOOST_TEST(intention_stack()[1].msg() == "intent on failure");
     BOOST_TEST(intention_stack()[1].where().file_name() == loc.file_name());
     BOOST_TEST(intention_stack()[1].where().line() == loc.line() + 3);
     BOOST_TEST(intention_stack()[1].where().function_name() ==
@@ -152,7 +153,7 @@ BOOST_AUTO_TEST_CASE(intent_copies_lvalue)
 
     try
     {
-        const auto i{intent().capture(spy)};
+        const auto i{intent().capture("lvalues are copied", spy)};
         throw 42;
     }
     catch (...)
@@ -169,7 +170,7 @@ BOOST_AUTO_TEST_CASE(intent_moves_rvalue)
 
     try
     {
-        const auto i{intent().capture(cm_spy{&calls})};
+        const auto i{intent().capture("rvalues are moved", cm_spy{&calls})};
         throw 42;
     }
     catch (...)
@@ -185,7 +186,7 @@ BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
     try
     {
         auto a{0};
-        const auto i{intent().capture(a)};
+        const auto i{intent().capture("intent takes snapshot", a)};
         ++a;
         throw 42;
     }
@@ -194,7 +195,7 @@ BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
     }
 
     BOOST_REQUIRE(intention_stack().size() == 1);
-    BOOST_TEST(intention_stack()[0].msg() == "0");
+    BOOST_TEST(intention_stack()[0].msg() == "intent takes snapshot0");
 }
 
 BOOST_AUTO_TEST_CASE(intent_can_take_ref)
@@ -202,7 +203,8 @@ BOOST_AUTO_TEST_CASE(intent_can_take_ref)
     try
     {
         auto a{0};
-        const auto i{intent().capture(std::cref(a))};
+        const auto i{
+            intent().capture("intent can take references", std::cref(a))};
         ++a;
         throw 42;
     }
@@ -211,7 +213,7 @@ BOOST_AUTO_TEST_CASE(intent_can_take_ref)
     }
 
     BOOST_REQUIRE(intention_stack().size() == 1);
-    BOOST_TEST(intention_stack()[0].msg() == "1");
+    BOOST_TEST(intention_stack()[0].msg() == "intent can take references1");
 }
 
 BOOST_AUTO_TEST_CASE(intent_from_a_range)
@@ -222,9 +224,9 @@ BOOST_AUTO_TEST_CASE(intent_from_a_range)
     }
     {
         const auto& a{a_range(-1, 0)};
-        BOOST_TEST(a.second == "a(-1)\n"
-                               "accu:0 idx:-1\n"
-                               "a_range(-1, 0)\n");
+        BOOST_TEST(a.second == "check if number is odd-1\n"
+                               "partial sum0-1\n"
+                               "sum number from min to max-10\n");
     }
 }
 
