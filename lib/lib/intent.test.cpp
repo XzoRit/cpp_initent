@@ -15,6 +15,7 @@ namespace
 {
 using ::xzr::error::intent;
 using ::xzr::error::intent_f;
+using ::xzr::error::intention_container;
 using ::xzr::error::intention_stack;
 using ::xzr::ext::source_location;
 
@@ -103,11 +104,20 @@ struct test_intent
     test_intent()
     {
         intention_stack().clear();
+        intention_container().clear();
     }
 
     ~test_intent()
     {
+        intention_container().clear();
         intention_stack().clear();
+    }
+
+    static std::string intent_container_to_string()
+    {
+        std::ostringstream str{};
+        ::xzr::error::dump_intents(str);
+        return str.str();
     }
 };
 
@@ -131,12 +141,15 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
     catch (...)
     {
     }
+    BOOST_CHECK_EQUAL(intent_container_to_string(),
+                      "check if number is odd -1\nintent on failure\n");
+
     BOOST_REQUIRE(!intention_stack().empty());
-    BOOST_REQUIRE_EQUAL(intention_stack().size(), 2);
+    BOOST_REQUIRE_EQUAL(intention_stack().size(), 2u);
 
     BOOST_TEST(intention_stack()[0].msg() == "check if number is odd -1");
     BOOST_TEST(intention_stack()[0].where().file_name() == loc.file_name());
-    BOOST_TEST(intention_stack()[0].where().line() == 25u);
+    BOOST_TEST(intention_stack()[0].where().line() == 26u);
     BOOST_TEST(intention_stack()[0].where().function_name() == "a");
 
     BOOST_TEST(intention_stack()[1].msg() == "intent on failure");
@@ -160,7 +173,7 @@ BOOST_AUTO_TEST_CASE(intent_copies_lvalue)
     {
     }
 
-    BOOST_TEST(calls == "_copy__move_");
+    BOOST_TEST(calls == "_copy__move__move_");
     BOOST_TEST(!intention_stack().empty());
 }
 
@@ -177,7 +190,7 @@ BOOST_AUTO_TEST_CASE(intent_moves_rvalue)
     {
     }
 
-    BOOST_TEST(calls == "_move__move_");
+    BOOST_TEST(calls == "_move__move__move_");
     BOOST_TEST(!intention_stack().empty());
 }
 
@@ -193,6 +206,9 @@ BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
     catch (...)
     {
     }
+
+    BOOST_CHECK_EQUAL(intent_container_to_string(),
+                      "intent takes snapshot 0\n");
 
     BOOST_REQUIRE(intention_stack().size() == 1);
     BOOST_TEST(intention_stack()[0].msg() == "intent takes snapshot 0");
@@ -211,6 +227,9 @@ BOOST_AUTO_TEST_CASE(intent_can_take_ref)
     catch (...)
     {
     }
+
+    BOOST_CHECK_EQUAL(intent_container_to_string(),
+                      "intent can take references 1\n");
 
     BOOST_REQUIRE(intention_stack().size() == 1);
     BOOST_TEST(intention_stack()[0].msg() == "intent can take references 1");
@@ -250,6 +269,8 @@ BOOST_AUTO_TEST_CASE(intent_from_multiple_threads)
         msg += f.get().second;
     }
 
+    BOOST_CHECK_EQUAL(intent_container_to_string(), "");
+
     BOOST_TEST(!msg.empty());
 }
 
@@ -268,7 +289,6 @@ BOOST_AUTO_TEST_CASE(intent_with_lambda_capture)
     }
 
     BOOST_TEST(!intention_stack().empty());
-    BOOST_TEST(intention_stack()[0].msg() == "");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

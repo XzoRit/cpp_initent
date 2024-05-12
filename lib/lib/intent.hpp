@@ -2,6 +2,7 @@
 
 #include <lib/source_location.hpp>
 
+#include <memory>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -10,6 +11,29 @@
 
 namespace xzr::error
 {
+struct intention_entry
+{
+    virtual ~intention_entry() = default;
+    virtual void stream_into(std::ostream&) = 0;
+};
+
+using intention_ptrs = std::vector<std::unique_ptr<intention_entry>>;
+
+inline intention_ptrs& intention_container()
+{
+    thread_local static intention_ptrs iptrs{};
+    return iptrs;
+}
+
+inline void dump_intents(std::ostream& s)
+{
+    for (auto&& i : intention_container())
+    {
+        i->stream_into(s);
+        s << '\n';
+    }
+}
+
 struct intention_stack_entry
 {
     using source_location = ::xzr::ext::source_location;
@@ -68,6 +92,23 @@ struct [[nodiscard]] intent_t
 {
     using source_location = ::xzr::ext::source_location;
 
+    struct entry final : intention_entry
+    {
+        explicit entry(std::tuple<Args...>&& t)
+            : tup{std::move(t)}
+        {
+        }
+
+        void stream_into(std::ostream& s) override
+        {
+            std::apply(
+                [&s](const auto&... args) { stream_args_into(s, args...); },
+                tup);
+        }
+
+        std::tuple<Args...> tup;
+    };
+
     explicit intent_t(source_location sl, Args... args)
         : tup{std::move(args)...}
         , loc{sl}
@@ -87,6 +128,8 @@ struct [[nodiscard]] intent_t
                         msg_from_ostringstream(args...)};
                 },
                 tup));
+            intention_container().push_back(
+                std::make_unique<entry>(std::move(tup)));
         }
         catch (...)
         {
