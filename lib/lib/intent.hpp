@@ -32,6 +32,7 @@ inline void dump_intents(std::ostream& s)
         i->stream_into(s);
         s << '\n';
     }
+    intention_container().clear();
 }
 
 struct intention_stack_entry

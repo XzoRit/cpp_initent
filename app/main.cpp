@@ -12,6 +12,11 @@
 
 namespace po = boost::program_options;
 
+void flush_intent_container()
+{
+    ::xzr::error::dump_intents(std::cout);
+}
+
 void flush_intention_stack()
 {
     for (const auto& m : ::xzr::error::intention_stack())
@@ -38,8 +43,13 @@ void odd(int a)
     const auto _{
         ::xzr::error::intent().capture("check if parameter is odd", a)};
     if (a % 2)
-        xzr::error::raise<std::runtime_error>()
+    {
+        const auto _{
+            ::xzr::error::intent().capture("throwing since parameter is odd",
+                                           a)};
+        ::xzr::error::raise<std::runtime_error>()
             << "odd (" << a << ") not allowed";
+    }
 }
 
 void negativ(int a)
@@ -47,8 +57,13 @@ void negativ(int a)
     const auto _{
         ::xzr::error::intent().capture("check if parameter is negative", a)};
     if (a < 0)
-        xzr::error::raise<std::runtime_error>()
+    {
+        const auto _{::xzr::error::intent().capture(
+            "throwing since parameter is negative",
+            a)};
+        ::xzr::error::raise<std::runtime_error>()
             << "negativ (" << a << ") not allowed";
+    }
     odd(a);
 }
 
@@ -63,8 +78,17 @@ void example()
         }
         catch (const std::exception& e)
         {
-            std::cout << e.what() << '\n';
+            std::cout << "exception: " << e.what() << '\n';
+            std::cout << "intentions:\n";
+            flush_intent_container();
+
+            std::cout << "\n\n";
+
+            std::cout << "exception: " << e.what() << '\n';
+            std::cout << "intentions:\n";
             flush_intention_stack();
+
+            std::cout << "\n\n";
         }
     }
 }
@@ -75,18 +99,18 @@ int main(int ac, char* av[])
 
     try
     {
-        po::options_description desc("Allowed options");
-        desc.add_options()("help", "produce help message");
+        // po::options_description desc("Allowed options");
+        // desc.add_options()("help", "produce help message");
 
-        po::variables_map vm;
-        po::store(po::parse_command_line(ac, av, desc), vm);
-        po::notify(vm);
+        // po::variables_map vm;
+        // po::store(po::parse_command_line(ac, av, desc), vm);
+        // po::notify(vm);
 
-        if (vm.count("help"))
-        {
-            std::cout << desc << "\n";
-            return 0;
-        }
+        // if (vm.count("help"))
+        // {
+        //     std::cout << desc << "\n";
+        //     return 0;
+        // }
         example();
     }
     catch (const std::exception& e)
