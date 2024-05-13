@@ -11,6 +11,31 @@
 
 namespace xzr::error
 {
+namespace fmt
+{
+template <class Stream, class A>
+inline void stream_arg_into(Stream& str, const A& arg)
+{
+    str << arg;
+}
+
+template <class Stream, class A, class... Args>
+inline Stream& stream_args_into(Stream& str, const A& arg, const Args&... args)
+{
+    stream_arg_into(str, arg);
+    ([&] { str << ' ' << args; }(), ...);
+    return str;
+}
+
+template <class... A>
+[[nodiscard]] inline std::string msg_from_ostringstream(const A&... args)
+{
+    std::ostringstream str{};
+    return stream_args_into(str, args...).str();
+}
+}
+inline namespace lazy_fmt
+{
 struct intention_entry
 {
     virtual ~intention_entry() = default;
@@ -34,7 +59,9 @@ inline void dump_intents(std::ostream& s)
     }
     intention_container().clear();
 }
-
+}
+inline namespace eager_fmt
+{
 struct intention_stack_entry
 {
     using source_location = ::xzr::ext::source_location;
@@ -66,28 +93,7 @@ inline intentions& intention_stack()
     thread_local static intentions ms{};
     return ms;
 }
-
-template <class Stream, class A>
-inline void stream_arg_into(Stream& str, const A& arg)
-{
-    str << arg;
 }
-
-template <class Stream, class A, class... Args>
-inline Stream& stream_args_into(Stream& str, const A& arg, const Args&... args)
-{
-    stream_arg_into(str, arg);
-    ([&] { str << ' ' << args; }(), ...);
-    return str;
-}
-
-template <class... A>
-[[nodiscard]] inline std::string msg_from_ostringstream(const A&... args)
-{
-    std::ostringstream str{};
-    return stream_args_into(str, args...).str();
-}
-
 template <class... Args>
 struct [[nodiscard]] intent_t
 {
@@ -95,19 +101,24 @@ struct [[nodiscard]] intent_t
 
     struct entry final : intention_entry
     {
-        explicit entry(std::tuple<Args...>&& t)
+        explicit entry(std::tuple<Args...>&& t, source_location sl)
             : tup{std::move(t)}
+            , loc{sl}
         {
         }
 
         void stream_into(std::ostream& s) override
         {
+            s << std::format("{0:F}:{0:L}:{0:C}:{0:f}:", loc);
             std::apply(
-                [&s](const auto&... args) { stream_args_into(s, args...); },
+                [&s](const auto&... args) {
+                    fmt::stream_args_into(s, args...);
+                },
                 tup);
         }
 
         std::tuple<Args...> tup;
+        source_location loc{source_location::current()};
     };
 
     explicit intent_t(source_location sl, Args... args)
@@ -126,11 +137,11 @@ struct [[nodiscard]] intent_t
                 [this](const auto&... args) {
                     return intention_stack_entry{
                         loc,
-                        msg_from_ostringstream(args...)};
+                        fmt::msg_from_ostringstream(args...)};
                 },
                 tup));
             intention_container().push_back(
-                std::make_unique<entry>(std::move(tup)));
+                std::make_unique<entry>(std::move(tup), loc));
         }
         catch (...)
         {

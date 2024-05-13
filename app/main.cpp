@@ -99,18 +99,18 @@ int main(int ac, char* av[])
 
     try
     {
-        // po::options_description desc("Allowed options");
-        // desc.add_options()("help", "produce help message");
+        po::options_description desc("Allowed options");
+        desc.add_options()("help", "produce help message");
 
-        // po::variables_map vm;
-        // po::store(po::parse_command_line(ac, av, desc), vm);
-        // po::notify(vm);
+        po::variables_map vm;
+        po::store(po::parse_command_line(ac, av, desc), vm);
+        po::notify(vm);
 
-        // if (vm.count("help"))
-        // {
-        //     std::cout << desc << "\n";
-        //     return 0;
-        // }
+        if (vm.count("help"))
+        {
+            std::cout << desc << "\n";
+            return 0;
+        }
         example();
     }
     catch (const std::exception& e)

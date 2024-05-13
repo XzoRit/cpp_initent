@@ -35,11 +35,10 @@ std::pair<int, std::string> a_range(int min, int max)
     auto msg{""s};
     try
     {
-        const auto& _a{
-            intent().capture("sum number from min to max", min, max)};
+        const auto& _{intent().capture("sum number from min to max", min, max)};
         for (int idx{min}; idx < max; ++idx)
         {
-            const auto& _b{intent().capture("partial sum", accu, idx)};
+            const auto& _{intent().capture("partial sum", accu, idx)};
             accu += a(idx);
         }
     }
@@ -125,7 +124,7 @@ BOOST_FIXTURE_TEST_SUITE(intent_tests, test_intent)
 
 BOOST_AUTO_TEST_CASE(no_intent_on_success)
 {
-    const auto& i{intent().capture("no intent on success")};
+    const auto& _{intent().capture("no intent on success")};
     a(0);
     BOOST_TEST(intention_stack().empty());
 }
@@ -135,14 +134,16 @@ BOOST_AUTO_TEST_CASE(intent_on_failure)
     const auto loc{source_location::current()};
     try
     {
-        const auto& i{intent().capture("intent on failure")};
+        const auto& _{intent().capture("intent on failure")};
         a(-1);
     }
     catch (...)
     {
     }
-    BOOST_CHECK_EQUAL(intent_container_to_string(),
-                      "check if number is odd -1\nintent on failure\n");
+    const auto intents_str{intent_container_to_string()};
+    BOOST_TEST(intents_str.contains("check if number is odd -1\n"),
+               intents_str);
+    BOOST_TEST(intents_str.contains("intent on failure\n"), intents_str);
 
     BOOST_REQUIRE(!intention_stack().empty());
     BOOST_REQUIRE_EQUAL(intention_stack().size(), 2u);
@@ -207,8 +208,8 @@ BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
     {
     }
 
-    BOOST_CHECK_EQUAL(intent_container_to_string(),
-                      "intent takes snapshot 0\n");
+    BOOST_TEST(
+        intent_container_to_string().ends_with("intent takes snapshot 0\n"));
 
     BOOST_REQUIRE(intention_stack().size() == 1);
     BOOST_TEST(intention_stack()[0].msg() == "intent takes snapshot 0");
@@ -228,8 +229,9 @@ BOOST_AUTO_TEST_CASE(intent_can_take_ref)
     {
     }
 
-    BOOST_CHECK_EQUAL(intent_container_to_string(),
-                      "intent can take references 1\n");
+    const auto intents_str{intent_container_to_string()};
+    BOOST_TEST(intents_str.contains("intent can take references 1\n"),
+               intents_str);
 
     BOOST_REQUIRE(intention_stack().size() == 1);
     BOOST_TEST(intention_stack()[0].msg() == "intent can take references 1");
