@@ -3,31 +3,8 @@
 #include <lib/raise.hpp>
 #include <lib/source_location.hpp>
 
-#include <boost/program_options.hpp>
-
-#include <format>
 #include <iostream>
-#include <iterator>
 #include <random>
-
-namespace po = boost::program_options;
-
-void flush_intent_container()
-{
-    ::xzr::error::dump_intents(std::cout);
-}
-
-void flush_intention_stack()
-{
-    for (const auto& m : ::xzr::error::intention_stack())
-    {
-        std::format_to(std::ostreambuf_iterator<char>{std::cout},
-                       "{0:F}:{0:L}:{0:C}:{0:f}:{1}\n",
-                       m.where(),
-                       m.msg());
-    }
-    ::xzr::error::intention_stack().clear();
-}
 
 int rand()
 {
@@ -41,12 +18,13 @@ int rand()
 void odd(int a)
 {
     const auto _{
-        ::xzr::error::intent().capture("check if parameter is odd", a)};
+        ::xzr::error::eager_fmt::intent().capture("check if parameter is odd",
+                                                  a)};
     if (a % 2)
     {
-        const auto _{
-            ::xzr::error::intent().capture("throwing since parameter is odd",
-                                           a)};
+        const auto _{::xzr::error::eager_fmt::intent().capture(
+            "throwing since parameter is odd",
+            a)};
         ::xzr::error::raise<std::runtime_error>()
             << "odd (" << a << ") not allowed";
     }
@@ -54,11 +32,12 @@ void odd(int a)
 
 void negativ(int a)
 {
-    const auto _{
-        ::xzr::error::intent().capture("check if parameter is negative", a)};
+    const auto _{::xzr::error::eager_fmt::intent().capture(
+        "check if parameter is negative",
+        a)};
     if (a < 0)
     {
-        const auto _{::xzr::error::intent().capture(
+        const auto _{::xzr::error::eager_fmt::intent().capture(
             "throwing since parameter is negative",
             a)};
         ::xzr::error::raise<std::runtime_error>()
@@ -78,16 +57,10 @@ void example()
         }
         catch (const std::exception& e)
         {
-            std::cout << "exception: " << e.what() << '\n';
-            std::cout << "intentions:\n";
-            flush_intent_container();
-
             std::cout << "\n\n";
-
             std::cout << "exception: " << e.what() << '\n';
             std::cout << "intentions:\n";
-            flush_intention_stack();
-
+            ::xzr::error::eager_fmt::stream_intention_stack_into(std::cout);
             std::cout << "\n\n";
         }
     }
@@ -99,18 +72,6 @@ int main(int ac, char* av[])
 
     try
     {
-        po::options_description desc("Allowed options");
-        desc.add_options()("help", "produce help message");
-
-        po::variables_map vm;
-        po::store(po::parse_command_line(ac, av, desc), vm);
-        po::notify(vm);
-
-        if (vm.count("help"))
-        {
-            std::cout << desc << "\n";
-            return 0;
-        }
         example();
     }
     catch (const std::exception& e)

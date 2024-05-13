@@ -725,14 +725,7 @@ std::string a0(int a, int b)
 
 void flush_intention_stack()
 {
-    for (const auto& m : ::xzr::error::intention_stack())
-    {
-        std::format_to(std::ostreambuf_iterator<char>{std::cout},
-                       "{0:F}:{0:L}:{0:C}:{0:f}:{1}\n",
-                       m.where(),
-                       m.msg());
-    }
-    ::xzr::error::intention_stack().clear();
+    ::xzr::error::eager_fmt::stream_intention_stack_into(std::cout);
 }
 
 int main()
