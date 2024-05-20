@@ -725,7 +725,7 @@ std::string a0(int a, int b)
 
 void flush_intention_stack()
 {
-    ::xzr::error::eager_fmt::stream_intention_stack_into(std::cout);
+    ::xzr::error::eager_fmt::dump_and_clear_intention_stack(std::cout);
 }
 
 int main()

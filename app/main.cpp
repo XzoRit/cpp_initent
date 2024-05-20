@@ -60,7 +60,7 @@ void example()
             std::cout << "\n\n";
             std::cout << "exception: " << e.what() << '\n';
             std::cout << "intentions:\n";
-            ::xzr::error::eager_fmt::stream_intention_stack_into(std::cout);
+            ::xzr::error::eager_fmt::dump_and_clear_intention_stack(std::cout);
             std::cout << "\n\n";
         }
     }

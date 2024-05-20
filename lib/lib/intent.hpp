@@ -50,7 +50,7 @@ inline intention_ptrs& intention_stack()
     return iptrs;
 }
 
-inline void stream_intention_stack_into(std::ostream& s)
+inline void dump_and_clear_intention_stack(std::ostream& s)
 {
     for (auto&& i : intention_stack())
     {
@@ -166,7 +166,7 @@ inline intentions& intention_stack()
     return ms;
 }
 
-inline void stream_intention_stack_into(std::ostream& s)
+inline void dump_and_clear_intention_stack(std::ostream& s)
 {
     for (auto&& i : intention_stack())
     {

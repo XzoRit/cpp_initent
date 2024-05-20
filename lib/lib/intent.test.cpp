@@ -4,6 +4,8 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <string>
+
 using namespace std::string_literals;
 
 namespace
@@ -72,49 +74,126 @@ struct test_intent
     {
         intention_stack().clear();
     }
+
+    template <class Func>
+    static std::string intention_string(Func&& dump)
+    {
+        std::ostringstream str{};
+        dump(str);
+        return str.str();
+    }
 };
 
 BOOST_FIXTURE_TEST_SUITE(intent_tests, test_intent)
 
 BOOST_AUTO_TEST_CASE(no_intent_on_success)
 {
-    const auto& _{intent().capture("no intent on success")};
-    throw_on_odd(0);
+    {
+        using ::xzr::error::eager_fmt::dump_and_clear_intention_stack;
+        using ::xzr::error::eager_fmt::intent;
 
-    BOOST_TEST(intention_stack().empty());
+        const auto& _{intent().capture("no intent on success")};
+        throw_on_odd(0);
+
+        const auto intents_str{
+            intention_string(dump_and_clear_intention_stack)};
+        BOOST_TEST(intents_str.empty());
+    }
+    {
+        using ::xzr::error::eager_fmt::dump_and_clear_intention_stack;
+        using ::xzr::error::lazy_fmt::intent;
+
+        const auto& _{intent().capture("no intent on success")};
+        throw_on_odd(0);
+
+        const auto intents_str{
+            intention_string(dump_and_clear_intention_stack)};
+        BOOST_TEST(intents_str.empty());
+    }
 }
 
 BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
 {
-    try
     {
-        auto a{0};
-        const auto i{intent().capture("intent takes snapshot", a)};
-        ++a;
-        throw_on_odd(a);
-    }
-    catch (...)
-    {
-    }
+        using ::xzr::error::eager_fmt::dump_and_clear_intention_stack;
+        using ::xzr::error::eager_fmt::intent;
 
-    BOOST_TEST(!intention_stack().empty());
+        try
+        {
+            auto a{0};
+            const auto i{intent().capture("intent takes snapshot", a)};
+            ++a;
+            throw_on_odd(a);
+        }
+        catch (...)
+        {
+        }
+
+        const auto intents_str{
+            intention_string(dump_and_clear_intention_stack)};
+        BOOST_TEST(!intents_str.empty());
+        BOOST_CHECK_EQUAL(*std::prev(intents_str.cend(), 2), '0');
+    }
+    {
+        using ::xzr::error::lazy_fmt::dump_and_clear_intention_stack;
+        using ::xzr::error::lazy_fmt::intent;
+
+        try
+        {
+            auto a{0};
+            const auto i{intent().capture("intent takes snapshot", a)};
+            ++a;
+            throw_on_odd(a);
+        }
+        catch (...)
+        {
+        }
+
+        const auto intents_str{
+            intention_string(dump_and_clear_intention_stack)};
+        BOOST_TEST(!intents_str.empty());
+        BOOST_CHECK_EQUAL(*std::prev(intents_str.cend(), 2), '0');
+    }
 }
 
 BOOST_AUTO_TEST_CASE(intent_can_take_ref)
 {
-    try
     {
-        auto a{0};
-        const auto i{
-            intent().capture("intent can take references", std::cref(a))};
-        ++a;
-        throw_on_odd(a);
-    }
-    catch (...)
-    {
-    }
+        using ::xzr::error::eager_fmt::dump_and_clear_intention_stack;
+        using ::xzr::error::eager_fmt::intent;
 
-    BOOST_TEST(!intention_stack().empty());
+        try
+        {
+            auto a{0};
+            const auto i{
+                intent().capture("intent can take references", std::cref(a))};
+            ++a;
+            throw_on_odd(a);
+        }
+        catch (...)
+        {
+        }
+
+        const auto intents_str{
+            intention_string(dump_and_clear_intention_stack)};
+        BOOST_REQUIRE(!intents_str.empty());
+        BOOST_CHECK_EQUAL(*std::prev(intents_str.cend(), 2), '1');
+    }
+    {
+        using ::xzr::error::lazy_fmt::intent;
+
+        try
+        {
+            auto a{0};
+            const auto i{intent().capture(
+                "this should not compile",
+                std::cref(a) /* todo: this should not compile
+                              when formatting lazily references are dangling */)};
+        }
+        catch (...)
+        {
+        }
+    }
 }
 
 BOOST_AUTO_TEST_CASE(intent_copies_lvalue)
