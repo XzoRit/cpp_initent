@@ -89,25 +89,23 @@ BOOST_FIXTURE_TEST_SUITE(intent_tests, test_intent)
 BOOST_AUTO_TEST_CASE(no_intent_on_success)
 {
     {
-        using ::xzr::error::eager_fmt::dump_and_clear_intention_stack;
+        using ::xzr::error::eager_fmt::dump_intention_stack;
         using ::xzr::error::eager_fmt::intent;
 
         const auto& _{intent().capture("no intent on success")};
         throw_on_odd(0);
 
-        const auto intents_str{
-            intention_string(dump_and_clear_intention_stack)};
+        const auto intents_str{intention_string(dump_intention_stack)};
         BOOST_TEST(intents_str.empty());
     }
     {
-        using ::xzr::error::eager_fmt::dump_and_clear_intention_stack;
+        using ::xzr::error::eager_fmt::dump_intention_stack;
         using ::xzr::error::lazy_fmt::intent;
 
         const auto& _{intent().capture("no intent on success")};
         throw_on_odd(0);
 
-        const auto intents_str{
-            intention_string(dump_and_clear_intention_stack)};
+        const auto intents_str{intention_string(dump_intention_stack)};
         BOOST_TEST(intents_str.empty());
     }
 }
@@ -115,7 +113,7 @@ BOOST_AUTO_TEST_CASE(no_intent_on_success)
 BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
 {
     {
-        using ::xzr::error::eager_fmt::dump_and_clear_intention_stack;
+        using ::xzr::error::eager_fmt::dump_intention_stack;
         using ::xzr::error::eager_fmt::intent;
 
         try
@@ -129,13 +127,12 @@ BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
         {
         }
 
-        const auto intents_str{
-            intention_string(dump_and_clear_intention_stack)};
+        const auto intents_str{intention_string(dump_intention_stack)};
         BOOST_TEST(!intents_str.empty());
         BOOST_CHECK_EQUAL(*std::prev(intents_str.cend(), 2), '0');
     }
     {
-        using ::xzr::error::lazy_fmt::dump_and_clear_intention_stack;
+        using ::xzr::error::lazy_fmt::dump_intention_stack;
         using ::xzr::error::lazy_fmt::intent;
 
         try
@@ -149,8 +146,7 @@ BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
         {
         }
 
-        const auto intents_str{
-            intention_string(dump_and_clear_intention_stack)};
+        const auto intents_str{intention_string(dump_intention_stack)};
         BOOST_TEST(!intents_str.empty());
         BOOST_CHECK_EQUAL(*std::prev(intents_str.cend(), 2), '0');
     }
@@ -159,7 +155,7 @@ BOOST_AUTO_TEST_CASE(intent_is_snapshot_by_default)
 BOOST_AUTO_TEST_CASE(intent_can_take_ref)
 {
     {
-        using ::xzr::error::eager_fmt::dump_and_clear_intention_stack;
+        using ::xzr::error::eager_fmt::dump_intention_stack;
         using ::xzr::error::eager_fmt::intent;
 
         try
@@ -174,8 +170,7 @@ BOOST_AUTO_TEST_CASE(intent_can_take_ref)
         {
         }
 
-        const auto intents_str{
-            intention_string(dump_and_clear_intention_stack)};
+        const auto intents_str{intention_string(dump_intention_stack)};
         BOOST_REQUIRE(!intents_str.empty());
         BOOST_CHECK_EQUAL(*std::prev(intents_str.cend(), 2), '1');
     }
