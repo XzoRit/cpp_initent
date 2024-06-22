@@ -1,5 +1,6 @@
 #pragma once
 
+#include <lib/exception.hpp>
 #include <lib/source_location.hpp>
 
 #include <sstream>
@@ -40,7 +41,21 @@ class [[maybe_unused]] raise_type
         }
         else
         {
-            throw Exception{m_stream.str().c_str()};
+            struct WrapExWithSrcLoc : Exception, exception
+            {
+              private:
+                using source_location = ::xzr::ext::source_location;
+
+              public:
+                explicit WrapExWithSrcLoc(
+                    std::string msg,
+                    source_location sl = source_location::current())
+                    : Exception{msg}
+                    , exception{msg, sl}
+                {
+                }
+            };
+            throw WrapExWithSrcLoc{m_stream.str().c_str(), m_srcLoc};
         }
     }
 #if defined(_MSVC_VER)

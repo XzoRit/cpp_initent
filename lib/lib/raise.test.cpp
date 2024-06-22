@@ -37,6 +37,22 @@ BOOST_AUTO_TEST_CASE(throw_std_e)
     }
 }
 
+BOOST_AUTO_TEST_CASE(throw_std_e_catch_as_err_e)
+{
+    try
+    {
+        raise<StdEx>() << "msg " << 2;
+    }
+    catch (const Ex& e)
+    {
+        BOOST_TEST(e.where().line() == __LINE__ - 4);
+        BOOST_TEST(e.where().file_name() == __FILE__);
+        BOOST_TEST(e.where().function_name() == __func__);
+        BOOST_TEST(e.what() == "msg 2");
+        BOOST_TEST(e.str() == "msg 2");
+    }
+}
+
 BOOST_AUTO_TEST_CASE(throw_exception_with_location)
 {
     try
