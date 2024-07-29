@@ -41,7 +41,7 @@ class [[maybe_unused]] raise_type
         }
         else
         {
-            struct WrapExWithSrcLoc : Exception, exception
+            struct WrapExWithSrcLoc : virtual Exception, virtual exception
             {
               private:
                 using source_location = ::xzr::ext::source_location;

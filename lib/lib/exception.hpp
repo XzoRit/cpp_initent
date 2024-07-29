@@ -8,7 +8,7 @@
 
 namespace xzr::error
 {
-class exception : public std::exception
+class exception : public virtual std::exception
 {
   private:
     using source_location = ::xzr::ext::source_location;
